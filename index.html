@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+# Let's generate a complete, fixed HTML file for the user based on their code, 
+# replacing the fetchSGS function with the robust AwesomeAPI mirror or proper CORS proxy fallback.
+# Since the user asked for the whole code to paste at once, providing it directly is fine, 
+# but let's make sure we generate it correctly and cleanly.
+
+html_content = """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -194,7 +199,7 @@
       <canvas id="debtChart"></canvas>
     </div>
     <div class="foot-note">
-      <b>Fonte:</b> Banco Central do Brasil — SGS, série 4513 (Dívida Líquida do Setor Público, % do PIB, setor público consolidado).
+      <b>Fonte:</b> Banco Central do Brasil — SGS, série 4513 (Dívida Líquida do Setor Público, % do PIB, sector público consolidado).
     </div>
   </section>
 </main>
@@ -220,31 +225,40 @@ Chart.defaults.color = COLORS.muted;
 async function fetchSGS(code, n = 120){
   const directUrl = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${n}?formato=json`;
 
-  // A API do BCB não envia cabeçalho CORS, então em páginas hospedadas
-  // (ex: GitHub Pages) o navegador bloqueia o fetch direto na maioria dos casos.
-  // Tenta a URL direta primeiro e, se falhar, passa por uma cadeia de proxies CORS
-  // públicos (nenhum deles tem SLA garantido, por isso a lista de fallback).
+  // Estrutura robusta multi-proxy para evitar bloqueios de CORS e instabilidade dos servidores públicos.
+  // Trata corretamente as respostas estruturadas de proxies como o allorigins.
   const attempts = [
-    directUrl,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(directUrl)}`,
-    `https://corsproxy.io/?url=${encodeURIComponent(directUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`
+    { url: directUrl, type: 'direct' },
+    { url: `https://corsproxy.io/?${encodeURIComponent(directUrl)}`, type: 'standard' },
+    { url: `https://api.allorigins.win/get?url=${encodeURIComponent(directUrl)}`, type: 'allorigins' }
   ];
 
   let lastError;
-  for (const url of attempts){
+  for (const attempt of attempts){
     try {
-      const res = await fetch(url);
+      const res = await fetch(attempt.url);
       if(!res.ok) throw new Error('HTTP ' + res.status);
-      const raw = await res.json();
+      
+      let raw;
+      if (attempt.type === 'allorigins') {
+        const jsonWrapper = await res.json();
+        raw = JSON.parse(jsonWrapper.contents);
+      } else {
+        raw = await res.json();
+      }
+
       if(!Array.isArray(raw)) throw new Error('resposta inesperada');
-      return raw.map(d => {
+      
+      // Garante a ordenação cronológica (do mais antigo para o mais recente)
+      const parsedData = raw.map(d => {
         const [day, month, year] = d.data.split('/');
         return { date: new Date(`${year}-${month}-${day}T00:00:00`), value: parseFloat(String(d.valor).replace(',', '.')) };
       });
+      
+      return parsedData.sort((a, b) => a.date - b.date);
     } catch(err){
       lastError = err;
-      console.warn(`Falha ao buscar série ${code} via ${url}:`, err.message);
+      console.warn(`Falha ao buscar série ${code} via ${attempt.url}:`, err.message);
     }
   }
   throw new Error(`Não foi possível obter a série ${code} (${lastError ? lastError.message : 'erro desconhecido'})`);
@@ -416,4 +430,6 @@ buildFiscalChart();
 buildDebtChart();
 </script>
 </body>
-</html>
+</html>"""
+
+print("HTML code prepared.")
