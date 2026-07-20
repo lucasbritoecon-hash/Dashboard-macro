@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 import requests
 
-# DADOS DE BACKUP (MOCK DATA) - Ampliado para cobrir o horizonte temporal caso falte rede
+# DADOS DE BACKUP (MOCK DATA) - Caso as APIs falhem
 MOCK_DIVIDA = [
     {"date": "2016-01-01T00:00:00", "value": 38.2},
     {"date": "2018-01-01T00:00:00", "value": 52.5},
@@ -13,6 +13,7 @@ MOCK_DIVIDA = [
     {"date": "2024-01-01T00:00:00", "value": 59.8},
     {"date": "2026-01-01T00:00:00", "value": 60.8},
 ]
+
 MOCK_FISCAL = [
     {"date": "2016-01-01T00:00:00", "a": -2.1, "b": -7.5},
     {"date": "2018-01-01T00:00:00", "a": -1.6, "b": -6.8},
@@ -22,25 +23,24 @@ MOCK_FISCAL = [
     {"date": "2026-01-01T00:00:00", "a": -0.5, "b": -6.2},
 ]
 
-
-def fetch_sgs_failover(code, days=3650):  # Ampliado para 10 anos (~3650 dias)
+def fetch_sgs_failover(code, days=3650):
     url_1 = f"https://economia.awesomeapi.com.br/json/daily/sgs/{code}?days={days}"
     url_2 = f"https://api.dadosabertos.br/v1/sgs/{code}/ultimos/{days}"
-
-    for idx, url in enumerate([url_1, url_2]):
+    
+    for url in [url_1, url_2]:
         try:
             response = requests.get(url, timeout=12)
             if response.status_code == 200:
                 raw_data = response.json()
                 processed = []
-
+                
                 # Formato AwesomeAPI
                 if isinstance(raw_data, list) and len(raw_data) > 0 and "data" in raw_data[0]:
                     for item in raw_data:
                         day, month, year = item["data"].split("/")
                         processed.append({"date": f"{year}-{month}-{day}T00:00:00", "value": float(str(item["valor"]).replace(",", "."))})
                     return sorted(processed, key=lambda x: x["date"])
-
+                
                 # Formato DadosAbertosBR
                 elif isinstance(raw_data, dict) and "dados" in raw_data:
                     for item in raw_data["dados"]:
@@ -51,323 +51,167 @@ def fetch_sgs_failover(code, days=3650):  # Ampliado para 10 anos (~3650 dias)
             continue
     return []
 
-
 def merge_series(series_a, series_b):
-    if not series_a and not series_b:
-        return []
+    if not series_a and not series_b: return []
     df_a = pd.DataFrame(series_a).rename(columns={"value": "a"}) if series_a else pd.DataFrame(columns=["date", "a"])
     df_b = pd.DataFrame(series_b).rename(columns={"value": "b"}) if series_b else pd.DataFrame(columns=["date", "b"])
-
     df_merged = pd.merge(df_a, df_b, on="date", how="outer").sort_values("date")
     return df_merged.where(pd.notnull(df_merged), None).to_dict(orient="records")
 
-
 def gerar_html():
     print("Iniciando a coleta de dados (Horizonte Ampliado: 10 anos)...")
-
     nom_pct = fetch_sgs_failover(5727)
     pri_pct = fetch_sgs_failover(5793)
     nom_brl = fetch_sgs_failover(5012)
     pri_brl = fetch_sgs_failover(5078)
     divida = fetch_sgs_failover(4513)
-
+    
     fiscal_pct = merge_series(pri_pct, nom_pct)
     fiscal_brl = merge_series(pri_brl, nom_brl)
-
+    
     usa_fallback = False
     if not divida or not fiscal_pct:
-        print("⚠️ APIs/Internet fora do ar. Injetando contingência...")
+        print("⚠️ APIs fora do ar. Injetando contingência...")
         divida = MOCK_DIVIDA
         fiscal_pct = MOCK_FISCAL
         fiscal_brl = MOCK_FISCAL
         usa_fallback = True
-
+        
     if usa_fallback:
         last_update_str = "Modo Offline (Servidor BCB Indisponível)"
     else:
-        dt_obj = datetime.strptime(divida[-1]["date"], "%Y-%m-%dT%00:%00:%00")
+        dt_obj = datetime.strptime(divida[-1]["date"], "%Y-%m-%dT%00:00:00")
         months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
         last_update_str = f"dados até {months[dt_obj.month - 1]} de {dt_obj.year}"
-
+        
     html_pure = """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CIEM — Painel Macro Brasil</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2 family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-<style>
-  :root{
-    --bg: #0C0A14;
-    --bg-elev: #161228;
-    --bg-elev-2: #1E1834;
-    --border: #2A2444;
-    --purple: #9B87F5;
-    --purple-soft: rgba(155,135,245,0.16);
-    --blue: #6FD3FF;
-    --blue-soft: rgba(111,211,255,0.14);
-    --white: #F4F2FA;
-    --muted: #8A82A6;
-    --muted-2: #5D5578;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:
-      radial-gradient(1200px 600px at 15% -10%, rgba(155,135,245,0.10), transparent 60%),
-      radial-gradient(1000px 500px at 100% 10%, rgba(111,211,255,0.07), transparent 55%),
-      var(--bg);
-    color: var(--white);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-  }
-  header{
-    display:flex; align-items:center; justify-content:space-between;
-    padding: 22px 40px; border-bottom: 1px solid var(--border);
-    position: sticky; top:0; z-index:10;
-    background: rgba(12,10,20,0.85); backdrop-filter: blur(10px);
-  }
-  .brand{ display:flex; align-items:center; gap:12px; }
-  .brand-mark{
-    width:34px; height:34px; border-radius:9px;
-    background: linear-gradient(135deg, var(--purple), var(--blue));
-    display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:15px; color:#0C0A14;
-  }
-  .brand-text h1{ font-family:'Space Grotesk', sans-serif; font-size:16px; margin:0; font-weight:600; letter-spacing:0.2px; }
-  .brand-text span{ font-size:11.5px; color: var(--muted); }
-  nav{ display:flex; gap:4px; }
-  .tab{ font-size:13px; padding:8px 14px; border-radius:8px; color: var(--muted); cursor:default; position:relative; font-weight:500; white-space:nowrap; }
-  .tab.active{ color: var(--white); background: var(--bg-elev-2); }
-  .tab.active::after{
-    content:''; position:absolute; left:14px; right:14px; bottom:-11px; height:2px;
-    background: linear-gradient(90deg, var(--purple), var(--blue)); border-radius:2px;
-  }
-  .tab.soon{ color: var(--muted-2); font-size:12px; }
-
-  main{ max-width: 1180px; margin: 0 auto; padding: 40px 40px 80px; }
-  .page-head{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:34px; flex-wrap:wrap; gap:16px;}
-  .page-head h2{ font-family:'Space Grotesk', sans-serif; font-size:28px; margin:0 0 6px; font-weight:600; }
-  .page-head p{ margin:0; color: var(--muted); font-size:14px; max-width:520px; line-height:1.5;}
-  .live{ display:flex; align-items:center; gap:8px; font-size:12px; color: var(--muted); font-family:'JetBrains Mono', monospace; }
-  .live .dot{ width:8px; height:8px; border-radius:50%; background: var(--blue); animation: pulse 2s infinite; }
-  @keyframes pulse{ 0%{ box-shadow: 0 0 0 0 rgba(111,211,255,0.45); } 70%{ box-shadow: 0 0 0 7px rgba(111,211,255,0); } 100%{ box-shadow: 0 0 0 0 rgba(111,211,255,0); } }
-
-  .card{ background: linear-gradient(180deg, var(--bg-elev), var(--bg-elev) 60%, rgba(22,18,40,0.6)); border: 1px solid var(--border); border-radius: 16px; padding: 26px 26px 20px; margin-bottom: 26px; }
-  .card-head{ display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom: 6px;}
-  .card-head h3{ font-family:'Space Grotesk', sans-serif; font-size:17px; margin:0 0 4px; font-weight:600; }
-  .card-head .sub{ color: var(--muted); font-size:13px; }
-
-  .toggle-group{ display:flex; background: var(--bg-elev-2); border:1px solid var(--border); border-radius:9px; padding:3px; gap:2px; }
-  .toggle-group button{ background:none; border:none; color: var(--muted); font-family:'JetBrains Mono', monospace; font-size:11.5px; padding:6px 12px; border-radius:7px; cursor:pointer; transition: all .15s ease; }
-  .toggle-group button.on{ background: linear-gradient(135deg, var(--purple), var(--blue)); color:#0C0A14; font-weight:600; }
-
-  .legend-row{ display:flex; gap:18px; margin: 10px 0 4px; flex-wrap:wrap;}
-  .legend-item{ display:flex; align-items:center; gap:7px; font-size:12.5px; color: var(--muted); }
-  .legend-item i{ width:12px; height:12px; border-radius:3px; display:inline-block; }
-  .chart-wrap{ position:relative; height: 340px; margin-top: 14px; }
-  .foot-note{ margin-top: 16px; padding-top:14px; border-top: 1px solid var(--border); font-size:11.5px; color: var(--muted-2); line-height:1.6; }
-  .foot-note b{ color: var(--muted); }
-  footer{ text-align:center; color: var(--muted-2); font-size:12px; padding: 10px 0 30px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIEM — Painel Macro Brasil</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 0; }
+        header { background-color: #1e293b; padding: 20px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .logo h1 { margin: 0; font-size: 20px; color: #38bdf8; }
+        .logo p { margin: 5px 0 0 0; font-size: 12px; color: #94a3b8; }
+        nav a { color: #94a3b8; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        nav a.active { color: #38bdf8; font-weight: bold; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .intro { margin-bottom: 25px; }
+        .intro h2 { margin: 0 0 5px 0; font-size: 24px; }
+        .intro p { margin: 0; color: #94a3b8; font-size: 14px; }
+        .update-tag { display: inline-block; background: #1e293b; padding: 4px 10px; border-radius: 4px; font-size: 12px; color: #38bdf8; margin-top: 10px; border: 1px solid #334155; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; }
+        .card-header h3 { margin: 0 0 5px 0; font-size: 18px; color: #f1f5f9; }
+        .card-header p { margin: 0 0 15px 0; font-size: 13px; color: #94a3b8; }
+        .chart { height: 400px; width: 100%; }
+        footer { text-align: center; padding: 30px; color: #64748b; font-size: 12px; border-top: 1px solid #1e293b; }
+    </style>
 </head>
 <body>
 
 <header>
-  <div class="brand">
-    <div class="brand-mark">C</div>
-    <div class="brand-text"><h1>CIEM</h1><span>Centro de Inteligência e Estudos Macroeconômicos</span></div>
-  </div>
-  <nav>
-    <div class="tab active">Fiscal</div>
-    <div class="tab soon">Inflação</div>
-    <div class="tab soon">Atividade</div>
-    <div class="tab soon">Mercado de Trabalho</div>
-    <div class="tab soon">Expectativas</div>
-  </nav>
+    <div class="logo">
+        <h1>CIEM</h1>
+        <p>Centro de Inteligência e Estudos Macroeconômicos</p>
+    </div>
+    <nav>
+        <a href="#" class="active">Fiscal</a>
+        <a href="#">Inflação</a>
+        <a href="#">Atividade</a>
+        <a href="#">Expectativas</a>
+    </nav>
 </header>
 
-<main>
-  <div class="page-head">
-    <div>
-      <h2>Painel Fiscal</h2>
-      <p>Resultado do setor público consolidado e trajetória da dívida líquida. Janela de análise de longo prazo (10 anos).</p>
+<div class="container">
+    <div class="intro">
+        <h2>Painel Fiscal</h2>
+        <p>Resultado do setor público consolidado e trajetória da dívida líquida (Últimos 10 anos).</p>
+        <div class="update-tag">__LAST_UPDATE__</div>
     </div>
-    <div class="live"><span class="dot"></span><span id="lastUpdate">__LAST_UPDATE__</span></div>
-  </div>
 
-  <section class="card">
-    <div class="card-head">
-      <div>
-        <h3>Resultado Fiscal — Primário e Nominal</h3>
-        <div class="sub" id="chartDesc">Setor público consolidado (% do PIB em Barras / R$ milhões em Linhas)</div>
-      </div>
-      <div class="toggle-group" id="unitToggle">
-        <button data-unit="pct" class="on">% do PIB</button>
-        <button data-unit="brl">R$ milhões</button>
-      </div>
-    </div>
-    <div class="legend-row">
-      <div class="legend-item"><i style="background:var(--blue)"></i>Resultado Primário</div>
-      <div class="legend-item"><i style="background:var(--purple)"></i>Resultado Nominal</div>
-    </div>
-    <div class="chart-wrap">
-      <canvas id="fiscalChart"></canvas>
-    </div>
-    <div class="foot-note"><b>Fontes:</b> Banco Central do Brasil — SGS via Python.</div>
-  </section>
+    <div class="grid">
+        <div class="card">
+            <div class="card-header">
+                <h3>Resultado Fiscal (% do PIB)</h3>
+                <p>Barras empilhadas negativas indicam déficit.</p>
+            </div>
+            <div id="chart-fiscal" class="chart"></div>
+        </div>
 
-  <section class="card">
-    <div class="card-head">
-      <div>
-        <h3>Dívida Líquida do Setor Público</h3>
-        <div class="sub">Setor público consolidado, % do PIB</div>
-      </div>
+        <div class="card">
+            <div class="card-header">
+                <h3>Dívida Líquida do Setor Público</h3>
+                <p>Percentual em relação ao PIB (% PIB).</p>
+            </div>
+            <div id="chart-divida" class="chart"></div>
+        </div>
     </div>
-    <div class="chart-wrap">
-      <canvas id="debtChart"></canvas>
-    </div>
-    <div class="foot-note"><b>Fonte:</b> Banco Central do Brasil — SGS, série 4513.</div>
-  </section>
-</main>
+</div>
 
-<footer>Painel gerado em: __COMPILE_TIME__ · Atualização na Nuvem ativa.</footer>
+<footer>
+    <p>Painel gerado em: __COMPILE_TIME__ · Atualização automática ativa via GitHub Actions.</p>
+</footer>
 
 <script>
-const COLORS = {
-  purple: '#9B87F5',
-  purpleSoft: 'rgba(155,135,245,0.22)',
-  blue: '#6FD3FF',
-  blueSoft: 'rgba(111,211,255,0.22)',
-  white: '#F4F2FA',
-  muted: '#8A82A6',
-  grid: 'rgba(255,255,255,0.06)'
-};
+    const fiscalData = __FISCAL_PCT__;
+    const debtData = __DEBT_DATA__;
 
-Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.color = COLORS.muted;
+    const fiscalCategories = fiscalData.map(item => {
+        const d = new Date(item.date);
+        return d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+    });
+    
+    const primarioSeries = fiscalData.map(item => item.a);
+    const nominalSeries = fiscalData.map(item => item.b);
 
-const fiscalData = { pct: __FISCAL_PCT__, brl: __FISCAL_BRL__ };
-const debtDataRaw = __DEBT_DATA__;
+    const debtCategories = debtData.map(item => {
+        const d = new Date(item.date);
+        return d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+    });
+    const debtSeries = debtData.map(item => item.value);
 
-fiscalData.pct.forEach(p => p.date = new Date(p.date));
-fiscalData.brl.forEach(p => p.date = new Date(p.date));
-const debtData = debtDataRaw.map(p => ({ date: new Date(p.date), value: p.value }));
+    // Gráfico Fiscal
+    Highcharts.chart('chart-fiscal', {
+        chart: { type: 'column', backgroundColor: '#1e293b' },
+        title: { text: null },
+        xAxis: { categories: fiscalCategories, labels: { style: { color: '#94a3b8' } }, lineColor: '#334155' },
+        yAxis: { title: { text: '% do PIB', style: { color: '#94a3b8' } }, labels: { style: { color: '#94a3b8' } }, gridLineColor: '#334155' },
+        legend: { itemStyle: { color: '#94a3b8' } },
+        plotOptions: { column: { borderWidth: 0 } },
+        series: [
+            { name: 'Resultado Primário', data: primarioSeries, color: '#38bdf8' },
+            { name: 'Resultado Nominal', data: nominalSeries, color: '#f43f5e' }
+        ],
+        credits: { enabled: false }
+    });
 
-let fiscalChart = null;
-const ctxFiscal = document.getElementById('fiscalChart').getContext('2d');
-
-function renderFiscalChart(unit) {
-  if (fiscalChart) { fiscalChart.destroy(); }
-  const isPct = unit === 'pct';
-  
-  // Condicional de estrutura solicitada: % do PIB usa barras ('bar'), R$ milhões usa linhas ('line')
-  const chartType = isPct ? 'bar' : 'line';
-  const dataSrc = fiscalData[unit];
-
-  fiscalChart = new Chart(ctxFiscal, {
-    type: chartType,
-    data: {
-      labels: dataSrc.map(p => p.date),
-      datasets: [
-        {
-          label: 'Resultado Primário',
-          data: dataSrc.map(p => p.a),
-          borderColor: COLORS.blue,
-          backgroundColor: isPct ? COLORS.blue : COLORS.blueSoft,
-          fill: !isPct, tension: 0.3, borderWidth: 2, pointRadius: 0, borderRadius: 3
-        },
-        {
-          label: 'Resultado Nominal',
-          data: dataSrc.map(p => p.b),
-          borderColor: COLORS.purple,
-          backgroundColor: isPct ? COLORS.purple : COLORS.purpleSoft,
-          fill: !isPct, tension: 0.3, borderWidth: 2, pointRadius: 0, borderRadius: 3
-        }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
-          titleColor: COLORS.white, bodyColor: COLORS.muted, padding: 10,
-          callbacks: {
-            label: (ctx) => {
-              const v = ctx.raw; if(v === null || v === undefined) return null;
-              const val = isPct ? `${v.toFixed(2)}% do PIB` : `R$ ${v.toLocaleString('pt-BR')} milhões`;
-              return `${ctx.dataset.label}: ${val}`;
-            }
-          }
-        },
-        annotation: { annotations: { zeroLine: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(255,255,255,0.25)', borderWidth: 1 } } }
-      },
-      scales: {
-        x: { type: 'time', time: { unit: 'year' }, grid: { color: COLORS.grid } },
-        y: { grid: { color: COLORS.grid }, ticks: { font: { family: "'JetBrains Mono', monospace" }, callback: (v) => isPct ? `${v}%` : v.toLocaleString('pt-BR') } }
-      }
-    }
-  });
-}
-
-// Inicializa com % do PIB em Barras
-renderFiscalChart('pct');
-
-document.getElementById('unitToggle').addEventListener('click', (e) => {
-  const btn = e.target.closest('button'); if(!btn) return;
-  const unit = btn.dataset.unit;
-  document.querySelectorAll('#unitToggle button').forEach(b => b.classList.toggle('on', b === btn));
-  renderFiscalChart(unit);
-});
-
-// Segundo Gráfico (Dívida Líquida) - Sempre Linha
-const ctxDebt = document.getElementById('debtChart').getContext('2d');
-const gradient = ctxDebt.createLinearGradient(0, 0, 0, 340);
-gradient.addColorStop(0, 'rgba(155,135,245,0.28)');
-gradient.addColorStop(1, 'rgba(111,211,255,0.02)');
-
-new Chart(ctxDebt, {
-  type: 'line',
-  data: {
-    labels: debtData.map(p => p.date),
-    datasets: [{
-      label: 'Dívida Líquida (% PIB)',
-      data: debtData.map(p => p.value),
-      borderColor: COLORS.purple, backgroundColor: gradient,
-      fill: true, tension: 0.2, borderWidth: 2.2, pointRadius: 0
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { type: 'time', time: { unit: 'year' }, grid: { color: COLORS.grid } },
-      y: { grid: { color: COLORS.grid }, ticks: { font: { family: "'JetBrains Mono', monospace" }, callback: (v) => `${v}%` } }
-    }
-  }
-});
+    // Gráfico Dívida
+    Highcharts.chart('chart-divida', {
+        chart: { type: 'area', backgroundColor: '#1e293b' },
+        title: { text: null },
+        xAxis: { categories: debtCategories, labels: { style: { color: '#94a3b8' } }, lineColor: '#334155' },
+        yAxis: { title: { text: '% do PIB', style: { color: '#94a3b8' } }, labels: { style: { color: '#94a3b8' } }, gridLineColor: '#334155' },
+        legend: { enabled: false },
+        series: [{ name: 'Dívida Líquida', data: debtSeries, color: '#f59e0b', fillOpacity: 0.1 }],
+        credits: { enabled: false }
+    });
 </script>
 </body>
-</html>
-"""
+</html>"""
 
     html_final = html_pure.replace("__LAST_UPDATE__", last_update_str)
     html_final = html_final.replace("__COMPILE_TIME__", datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     html_final = html_final.replace("__FISCAL_PCT__", json.dumps(fiscal_pct))
-    html_final = html_final.replace("__FISCAL_BRL__", json.dumps(fiscal_brl))
     html_final = html_final.replace("__DEBT_DATA__", json.dumps(divida))
-
+    
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_final)
-
     print("\n✅ Concluído! O arquivo 'index.html' foi gerado com sucesso.")
-
 
 if __name__ == "__main__":
     gerar_html()
