@@ -218,10 +218,22 @@ Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = COLORS.muted;
 
 async function fetchSGS(code, n = 120){
-  const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${n}?formato=json`;
-  const res = await fetch(url);
-  if(!res.ok) throw new Error(`Falha ao buscar série ${code}`);
-  const raw = await res.json();
+  const directUrl = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${n}?formato=json`;
+  let raw;
+  try {
+    // Tentativa direta — funciona em alguns navegadores/ambientes locais
+    const res = await fetch(directUrl);
+    if(!res.ok) throw new Error('status ' + res.status);
+    raw = await res.json();
+  } catch(directErr){
+    // A API do BCB não envia cabeçalho CORS, então em páginas hospedadas
+    // (ex: GitHub Pages) o navegador bloqueia o fetch direto.
+    // Fallback: passa pelo proxy allorigins, que devolve os mesmos dados com CORS liberado.
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`;
+    const res = await fetch(proxyUrl);
+    if(!res.ok) throw new Error(`Falha ao buscar série ${code}`);
+    raw = await res.json();
+  }
   return raw.map(d => {
     const [day, month, year] = d.data.split('/');
     return { date: new Date(`${year}-${month}-${day}T00:00:00`), value: parseFloat(String(d.valor).replace(',', '.')) };
