@@ -219,25 +219,35 @@ Chart.defaults.color = COLORS.muted;
 
 async function fetchSGS(code, n = 120){
   const directUrl = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${n}?formato=json`;
-  let raw;
-  try {
-    // Tentativa direta — funciona em alguns navegadores/ambientes locais
-    const res = await fetch(directUrl);
-    if(!res.ok) throw new Error('status ' + res.status);
-    raw = await res.json();
-  } catch(directErr){
-    // A API do BCB não envia cabeçalho CORS, então em páginas hospedadas
-    // (ex: GitHub Pages) o navegador bloqueia o fetch direto.
-    // Fallback: passa pelo proxy allorigins, que devolve os mesmos dados com CORS liberado.
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`;
-    const res = await fetch(proxyUrl);
-    if(!res.ok) throw new Error(`Falha ao buscar série ${code}`);
-    raw = await res.json();
+
+  // A API do BCB não envia cabeçalho CORS, então em páginas hospedadas
+  // (ex: GitHub Pages) o navegador bloqueia o fetch direto na maioria dos casos.
+  // Tenta a URL direta primeiro e, se falhar, passa por uma cadeia de proxies CORS
+  // públicos (nenhum deles tem SLA garantido, por isso a lista de fallback).
+  const attempts = [
+    directUrl,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(directUrl)}`,
+    `https://corsproxy.io/?url=${encodeURIComponent(directUrl)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`
+  ];
+
+  let lastError;
+  for (const url of attempts){
+    try {
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const raw = await res.json();
+      if(!Array.isArray(raw)) throw new Error('resposta inesperada');
+      return raw.map(d => {
+        const [day, month, year] = d.data.split('/');
+        return { date: new Date(`${year}-${month}-${day}T00:00:00`), value: parseFloat(String(d.valor).replace(',', '.')) };
+      });
+    } catch(err){
+      lastError = err;
+      console.warn(`Falha ao buscar série ${code} via ${url}:`, err.message);
+    }
   }
-  return raw.map(d => {
-    const [day, month, year] = d.data.split('/');
-    return { date: new Date(`${year}-${month}-${day}T00:00:00`), value: parseFloat(String(d.valor).replace(',', '.')) };
-  });
+  throw new Error(`Não foi possível obter a série ${code} (${lastError ? lastError.message : 'erro desconhecido'})`);
 }
 
 function mergeByDate(seriesA, seriesB){
@@ -297,7 +307,8 @@ async function buildFiscalChart(){
     const lastDate = labels[labels.length - 1];
     document.getElementById('lastUpdate').textContent = 'dados até ' + fmtDate(lastDate);
   } catch(err){
-    status.textContent = 'Não foi possível carregar os dados do BCB agora. Verifique a conexão e recarregue a página.';
+    console.error(err);
+    status.textContent = 'Não foi possível carregar os dados do BCB agora. (' + err.message + ')';
   }
 }
 
@@ -396,7 +407,8 @@ async function buildDebtChart(){
       }
     });
   } catch(err){
-    status.textContent = 'Não foi possível carregar os dados do BCB agora. Verifique a conexão e recarregue a página.';
+    console.error(err);
+    status.textContent = 'Não foi possível carregar os dados do BCB agora. (' + err.message + ')';
   }
 }
 
