@@ -22,7 +22,7 @@ jobs:
         pip install pandas requests
 
     - name: Executar Script de Coleta
-      run: python "import json.py"
+      run: python coletor.py
 
     - name: Dar Push no HTML atualizado
       run: |
