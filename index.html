@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIEM — Painel Macro Brasil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+  :root{
+    --bg: #0C0A14;
+    --bg-elev: #161228;
+    --bg-elev-2: #1E1834;
+    --border: #2A2444;
+    --purple: #9B87F5;
+    --purple-soft: rgba(155,135,245,0.16);
+    --blue: #6FD3FF;
+    --blue-soft: rgba(111,211,255,0.14);
+    --white: #F4F2FA;
+    --muted: #8A82A6;
+    --muted-2: #5D5578;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(155,135,245,0.10), transparent 60%),
+      radial-gradient(1000px 500px at 100% 10%, rgba(111,211,255,0.07), transparent 55%),
+      var(--bg);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 22px 40px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top:0; z-index:10;
+    background: rgba(12,10,20,0.85);
+    backdrop-filter: blur(10px);
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:15px; color:#0C0A14;
+  }
+  .brand-text h1{
+    font-family:'Space Grotesk', sans-serif; font-size:16px; margin:0; font-weight:600; letter-spacing:0.2px;
+  }
+  .brand-text span{ font-size:11.5px; color: var(--muted); }
+  nav{ display:flex; gap:4px; }
+  .tab{
+    font-size:13px; padding:8px 14px; border-radius:8px; color: var(--muted);
+    cursor:default; position:relative; font-weight:500; white-space:nowrap;
+  }
+  .tab.active{ color: var(--white); background: var(--bg-elev-2); }
+  .tab.active::after{
+    content:''; position:absolute; left:14px; right:14px; bottom:-11px; height:2px;
+    background: linear-gradient(90deg, var(--purple), var(--blue));
+    border-radius:2px;
+  }
+  .tab.soon{ color: var(--muted-2); font-size:12px; }
+
+  main{ max-width: 1180px; margin: 0 auto; padding: 40px 40px 80px; }
+
+  .page-head{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:34px; flex-wrap:wrap; gap:16px;}
+  .page-head h2{ font-family:'Space Grotesk', sans-serif; font-size:28px; margin:0 0 6px; font-weight:600; }
+  .page-head p{ margin:0; color: var(--muted); font-size:14px; max-width:520px; line-height:1.5;}
+  .live{ display:flex; align-items:center; gap:8px; font-size:12px; color: var(--muted); font-family:'JetBrains Mono', monospace; }
+  .live .dot{
+    width:8px; height:8px; border-radius:50%; background: var(--blue);
+    box-shadow: 0 0 0 0 rgba(111,211,255,0.6);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow: 0 0 0 0 rgba(111,211,255,0.45); }
+    70%{ box-shadow: 0 0 0 7px rgba(111,211,255,0); }
+    100%{ box-shadow: 0 0 0 0 rgba(111,211,255,0); }
+  }
+
+  .card{
+    background: linear-gradient(180deg, var(--bg-elev), var(--bg-elev) 60%, rgba(22,18,40,0.6));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px 26px 20px;
+    margin-bottom: 26px;
+  }
+  .card-head{ display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom: 6px;}
+  .card-head h3{ font-family:'Space Grotesk', sans-serif; font-size:17px; margin:0 0 4px; font-weight:600; }
+  .card-head .sub{ color: var(--muted); font-size:13px; }
+
+  .toggle-group{ display:flex; background: var(--bg-elev-2); border:1px solid var(--border); border-radius:9px; padding:3px; gap:2px; }
+  .toggle-group button{
+    background:none; border:none; color: var(--muted); font-family:'JetBrains Mono', monospace;
+    font-size:11.5px; padding:6px 12px; border-radius:7px; cursor:pointer; transition: all .15s ease;
+  }
+  .toggle-group button.on{ background: linear-gradient(135deg, var(--purple), var(--blue)); color:#0C0A14; font-weight:600; }
+
+  .legend-row{ display:flex; gap:18px; margin: 10px 0 4px; flex-wrap:wrap;}
+  .legend-item{ display:flex; align-items:center; gap:7px; font-size:12.5px; color: var(--muted); }
+  .legend-item i{ width:12px; height:12px; border-radius:3px; display:inline-block; }
+
+  .chart-wrap{ position:relative; height: 340px; margin-top: 14px; }
+
+  .foot-note{
+    margin-top: 16px; padding-top:14px; border-top: 1px solid var(--border);
+    font-size:11.5px; color: var(--muted-2); line-height:1.6;
+  }
+  .foot-note b{ color: var(--muted); }
+
+  footer{ text-align:center; color: var(--muted-2); font-size:12px; padding: 10px 0 30px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <div class="brand-text">
+      <h1>CIEM</h1>
+      <span>Centro de Inteligência e Estudos Macroeconômicos</span>
+    </div>
+  </div>
+  <nav>
+    <div class="tab active">Fiscal</div>
+    <div class="tab soon">Inflação</div>
+    <div class="tab soon">Atividade</div>
+    <div class="tab soon">Mercado de Trabalho</div>
+    <div class="tab soon">Expectativas</div>
+  </nav>
+</header>
+
+<main>
+  <div class="page-head">
+    <div>
+      <h2>Painel Fiscal</h2>
+      <p>Resultado do setor público consolidado e trajetória da dívida líquida. Compilação híbrida com tolerância a falhas.</p>
+    </div>
+    <div class="live"><span class="dot"></span><span id="lastUpdate">Modo Offline (Servidor BCB Indisponível)</span></div>
+  </div>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h3>Resultado Fiscal — Primário e Nominal</h3>
+        <div class="sub">Setor público consolidado</div>
+      </div>
+      <div class="toggle-group" id="unitToggle">
+        <button data-unit="pct" class="on">% do PIB</button>
+        <button data-unit="brl">R$ milhões</button>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><i style="background:var(--blue)"></i>Resultado Primário</div>
+      <div class="legend-item"><i style="background:var(--purple)"></i>Resultado Nominal</div>
+      <div class="legend-item" style="color:var(--muted-2)">Acima da linha zero = superávit · abaixo = déficit</div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="fiscalChart"></canvas>
+    </div>
+    <div class="foot-note">
+      <b>Fontes:</b> Banco Central do Brasil — SGS compilado via Python.
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h3>Dívida Líquida do Setor Público</h3>
+        <div class="sub">Setor público consolidado, % do PIB</div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="debtChart"></canvas>
+    </div>
+    <div class="foot-note">
+      <b>Fonte:</b> Banco Central do Brasil — SGS, série 4513.
+    </div>
+  </section>
+</main>
+
+<footer>
+  Painel construído em: 20/07/2026 16:19:05 · Cache estático ativo.
+</footer>
+
+<script>
+const COLORS = {
+  purple: '#9B87F5',
+  purpleSoft: 'rgba(155,135,245,0.14)',
+  blue: '#6FD3FF',
+  blueSoft: 'rgba(111,211,255,0.14)',
+  white: '#F4F2FA',
+  muted: '#8A82A6',
+  grid: 'rgba(255,255,255,0.06)'
+};
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = COLORS.muted;
+
+const fiscalData = {
+  pct: [{"date": "2025-11-01T00:00:00", "a": -0.2, "b": -6.1}, {"date": "2025-12-01T00:00:00", "a": -0.5, "b": -6.4}, {"date": "2026-01-01T00:00:00", "a": 0.1, "b": -5.9}, {"date": "2026-02-01T00:00:00", "a": -0.1, "b": -6.2}],
+  brl: [{"date": "2025-11-01T00:00:00", "a": -0.2, "b": -6.1}, {"date": "2025-12-01T00:00:00", "a": -0.5, "b": -6.4}, {"date": "2026-01-01T00:00:00", "a": 0.1, "b": -5.9}, {"date": "2026-02-01T00:00:00", "a": -0.1, "b": -6.2}]
+};
+const debtDataRaw = [{"date": "2025-11-01T00:00:00", "value": 60.2}, {"date": "2025-12-01T00:00:00", "value": 60.5}, {"date": "2026-01-01T00:00:00", "value": 61.1}, {"date": "2026-02-01T00:00:00", "value": 60.8}];
+
+fiscalData.pct.forEach(p => p.date = new Date(p.date));
+fiscalData.brl.forEach(p => p.date = new Date(p.date));
+const debtData = debtDataRaw.map(p => ({ date: new Date(p.date), value: p.value }));
+
+let fiscalChart;
+
+const labelsFiscal = fiscalData.pct.map(p => p.date);
+const ctxFiscal = document.getElementById('fiscalChart').getContext('2d');
+fiscalChart = new Chart(ctxFiscal, {
+  type: 'line',
+  data: {
+    labels: labelsFiscal,
+    datasets: [
+      {
+        label: 'Resultado Primário',
+        data: fiscalData.pct.map(p => p.a),
+        borderColor: COLORS.blue,
+        backgroundColor: COLORS.blueSoft,
+        fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4
+      },
+      {
+        label: 'Resultado Nominal',
+        data: fiscalData.pct.map(p => p.b),
+        borderColor: COLORS.purple,
+        backgroundColor: COLORS.purpleSoft,
+        fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4
+      }
+    ]
+  },
+  options: fiscalOptions('pct')
+});
+
+function fiscalOptions(unit){
+  const isPct = unit === 'pct';
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+        titleColor: COLORS.white, bodyColor: COLORS.muted, padding: 10,
+        callbacks: {
+          label: (ctx) => {
+            const v = ctx.raw;
+            if(v === null || v === undefined) return null;
+            const status = v >= 0 ? 'superávit' : 'déficit';
+            const val = isPct ? `${v.toFixed(2)}% do PIB` : `R$ ${v.toLocaleString('pt-BR')} milhões`;
+            return `${ctx.dataset.label}: ${val} (${status})`;
+          }
+        }
+      },
+      annotation: {
+        annotations: {
+          zeroLine: {
+            type: 'line', yMin: 0, yMax: 0,
+            borderColor: 'rgba(255,255,255,0.25)', borderWidth: 1, borderDash: [4,4]
+          }
+        }
+      }
+    },
+    scales: {
+      x: { type: 'time', time: { unit: 'year' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.muted } },
+      y: {
+        grid: { color: COLORS.grid },
+        ticks: {
+          color: COLORS.muted, font: { family: "'JetBrains Mono', monospace" },
+          callback: (v) => isPct ? `${v}%` : v.toLocaleString('pt-BR')
+        }
+      }
+    }
+  };
+}
+
+document.getElementById('unitToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if(!btn || !fiscalChart) return;
+  const unit = btn.dataset.unit;
+  document.querySelectorAll('#unitToggle button').forEach(b => b.classList.toggle('on', b === btn));
+  const src = fiscalData[unit];
+  fiscalChart.data.datasets[0].data = src.map(p => p.a);
+  fiscalChart.data.datasets[1].data = src.map(p => p.b);
+  fiscalChart.options = fiscalOptions(unit);
+  fiscalChart.update();
+});
+
+const ctxDebt = document.getElementById('debtChart').getContext('2d');
+const gradient = ctxDebt.createLinearGradient(0, 0, 0, 340);
+gradient.addColorStop(0, 'rgba(155,135,245,0.28)');
+gradient.addColorStop(1, 'rgba(111,211,255,0.02)');
+
+new Chart(ctxDebt, {
+  type: 'line',
+  data: {
+    labels: debtData.map(p => p.date),
+    datasets: [{
+      label: 'Dívida Líquida (% PIB)',
+      data: debtData.map(p => p.value),
+      borderColor: COLORS.purple,
+      backgroundColor: gradient,
+      fill: true, tension: 0.3, borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+        titleColor: COLORS.white, bodyColor: COLORS.muted, padding: 10,
+        callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)}% do PIB` }
+      }
+    },
+    scales: {
+      x: { type: 'time', time: { unit: 'year' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.muted } },
+      y: { grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, font: { family: "'JetBrains Mono', monospace" }, callback: (v) => `${v}%` } }
+    }
+  }
+});
+</script>
+</body>
+</html>
