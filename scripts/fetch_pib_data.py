@@ -81,6 +81,20 @@ def build_series() -> dict:
         dados_pib, dados_fbcf, on=["data", "ano", "trimestre"], how="outer"
     )
 
+    # Mantem apenas anos com os 4 trimestres completos para PIB e FBCF.
+    # Isso evita que um ano em andamento (ex.: 2026 com so 1-2 trimestres
+    # divulgados) entre "picado" na soma anual e distorca a variacao e o
+    # filtro HP. Conforme o ano avanca e mais trimestres saem, ele passa
+    # a entrar automaticamente -- nao precisa ajustar isso na mao.
+    completude = dados_completos.groupby("ano").agg(
+        pib_trimestres=("pib_milhoes", lambda s: s.notna().sum()),
+        fbcf_trimestres=("fbcf_milhoes", lambda s: s.notna().sum()),
+    )
+    anos_completos = completude[
+        (completude["pib_trimestres"] == 4) & (completude["fbcf_trimestres"] == 4)
+    ].index
+    dados_completos = dados_completos[dados_completos["ano"].isin(anos_completos)]
+
     anual = (
         dados_completos.groupby("ano", as_index=False)
         .agg(pib_anual=("pib_milhoes", "sum"), fbcf_anual=("fbcf_milhoes", "sum"))
