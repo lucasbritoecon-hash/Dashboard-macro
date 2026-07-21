@@ -1,0 +1,12 @@
+{
+  "series": {
+    "nominal_pct": [],
+    "primario_pct": [],
+    "nominal_brl": [],
+    "primario_brl": [],
+    "divida_liquida_pct": []
+  },
+  "updated_at": null,
+  "had_failure": false,
+  "failed_keys": []
+}
