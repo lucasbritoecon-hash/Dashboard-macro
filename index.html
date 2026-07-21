@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIEM — Painel Macro Brasil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+  :root{
+    --bg: #0C0A14;
+    --bg-elev: #161228;
+    --bg-elev-2: #1E1834;
+    --border: #2A2444;
+    --purple: #9B87F5;
+    --purple-soft: rgba(155,135,245,0.16);
+    --blue: #6FD3FF;
+    --blue-soft: rgba(111,211,255,0.14);
+    --white: #F4F2FA;
+    --muted: #8A82A6;
+    --muted-2: #5D5578;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(155,135,245,0.10), transparent 60%),
+      radial-gradient(1000px 500px at 100% 10%, rgba(111,211,255,0.07), transparent 55%),
+      var(--bg);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 22px 40px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top:0; z-index:10;
+    background: rgba(12,10,20,0.85);
+    backdrop-filter: blur(10px);
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:15px; color:#0C0A14;
+  }
+  .brand-text h1{
+    font-family:'Space Grotesk', sans-serif; font-size:16px; margin:0; font-weight:600; letter-spacing:0.2px;
+  }
+  .brand-text span{ font-size:11.5px; color: var(--muted); }
+  nav{ display:flex; gap:4px; }
+  .tab{
+    font-size:13px; padding:8px 14px; border-radius:8px; color: var(--muted);
+    cursor:pointer; position:relative; font-weight:500; white-space:nowrap;
+    transition: color .15s ease;
+  }
+  .tab:hover{ color: var(--white); }
+  .tab.soon{ cursor:default; }
+  .tab.soon:hover{ color: var(--muted-2); }
+  .tab.active{ color: var(--white); background: var(--bg-elev-2); }
+  .tab.active::after{
+    content:''; position:absolute; left:14px; right:14px; bottom:-11px; height:2px;
+    background: linear-gradient(90deg, var(--purple), var(--blue));
+    border-radius:2px;
+  }
+  .tab.soon{ color: var(--muted-2); font-size:12px; }
+  .tab.soon::before{ content:''; }
+
+  main{ max-width: 1180px; margin: 0 auto; padding: 40px 40px 80px; }
+
+  .page-head{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:34px; flex-wrap:wrap; gap:16px;}
+  .page-head h2{ font-family:'Space Grotesk', sans-serif; font-size:28px; margin:0 0 6px; font-weight:600; }
+  .page-head p{ margin:0; color: var(--muted); font-size:14px; max-width:520px; line-height:1.5;}
+  .live{ display:flex; align-items:center; gap:8px; font-size:12px; color: var(--muted); font-family:'JetBrains Mono', monospace; }
+  .live .dot{
+    width:8px; height:8px; border-radius:50%; background: var(--blue);
+    box-shadow: 0 0 0 0 rgba(111,211,255,0.6);
+    animation: pulse 2s infinite;
+  }
+  .live .dot.warn{ background: #F5A623; }
+  @keyframes pulse{
+    0%{ box-shadow: 0 0 0 0 rgba(111,211,255,0.45); }
+    70%{ box-shadow: 0 0 0 7px rgba(111,211,255,0); }
+    100%{ box-shadow: 0 0 0 0 rgba(111,211,255,0); }
+  }
+
+  .card{
+    background: linear-gradient(180deg, var(--bg-elev), var(--bg-elev) 60%, rgba(22,18,40,0.6));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px 26px 20px;
+    margin-bottom: 26px;
+  }
+  .card-head{ display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom: 6px;}
+  .card-head h3{ font-family:'Space Grotesk', sans-serif; font-size:17px; margin:0 0 4px; font-weight:600; }
+  .card-head .sub{ color: var(--muted); font-size:13px; }
+
+  .toggle-group{ display:flex; background: var(--bg-elev-2); border:1px solid var(--border); border-radius:9px; padding:3px; gap:2px; }
+  .toggle-group button{
+    background:none; border:none; color: var(--muted); font-family:'JetBrains Mono', monospace;
+    font-size:11.5px; padding:6px 12px; border-radius:7px; cursor:pointer; transition: all .15s ease;
+  }
+  .toggle-group button.on{ background: linear-gradient(135deg, var(--purple), var(--blue)); color:#0C0A14; font-weight:600; }
+
+  .legend-row{ display:flex; gap:18px; margin: 10px 0 4px; flex-wrap:wrap;}
+  .legend-item{ display:flex; align-items:center; gap:7px; font-size:12.5px; color: var(--muted); }
+  .legend-item i{ width:12px; height:12px; border-radius:3px; display:inline-block; }
+
+  .chart-wrap{ position:relative; height: 340px; margin-top: 14px; }
+  .chart-status{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color: var(--muted); font-size:13px; font-family:'JetBrains Mono', monospace; text-align:center; padding:0 20px;
+  }
+
+  .foot-note{
+    margin-top: 16px; padding-top:14px; border-top: 1px solid var(--border);
+    font-size:11.5px; color: var(--muted-2); line-height:1.6;
+  }
+  .foot-note b{ color: var(--muted); }
+
+  .stale-badge{
+    display:inline-block; margin-top:8px; font-size:11px; color:#F5A623;
+    background: rgba(245,166,35,0.12); border:1px solid rgba(245,166,35,0.3);
+    padding:3px 9px; border-radius:6px; font-family:'JetBrains Mono', monospace;
+  }
+
+  footer{ text-align:center; color: var(--muted-2); font-size:12px; padding: 10px 0 30px; }
+  footer a{ color: var(--blue); text-decoration:none; }
+
+  @media (max-width: 720px){
+    header{ padding:16px 18px; flex-wrap:wrap; gap:12px; }
+    main{ padding:26px 18px 60px; }
+    nav{ overflow-x:auto; width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <div class="brand-text">
+      <h1>CIEM</h1>
+      <span>Centro de Inteligência e Estudos Macroeconômicos</span>
+    </div>
+  </div>
+  <nav>
+    <div class="tab active" data-page="fiscal">Fiscal</div>
+    <div class="tab" data-page="atividade">Atividade</div>
+    <div class="tab soon">Inflação</div>
+    <div class="tab soon">Mercado de Trabalho</div>
+    <div class="tab soon">Expectativas</div>
+  </nav>
+</header>
+
+<main>
+  <div class="page" id="page-fiscal">
+    <div class="page-head">
+      <div>
+        <h2>Painel Fiscal</h2>
+        <p>Resultado do setor público consolidado e trajetória da dívida líquida, com dados do SGS/Banco Central do Brasil.</p>
+      </div>
+      <div>
+        <div class="live"><span class="dot" id="liveDot"></span><span id="lastUpdate">carregando…</span></div>
+        <div id="staleBadge" style="display:none" class="stale-badge">última atualização automática falhou — exibindo dados em cache</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Resultado Fiscal — Primário e Nominal</h3>
+          <div class="sub">Setor público consolidado, série histórica</div>
+        </div>
+        <div class="toggle-group" id="unitToggle">
+          <button data-unit="pct" class="on">% do PIB</button>
+          <button data-unit="brl">R$ milhões</button>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><i style="background:var(--blue)"></i>Resultado Primário</div>
+        <div class="legend-item"><i style="background:var(--purple)"></i>Resultado Nominal</div>
+        <div class="legend-item" style="color:var(--muted-2)">Acima da linha zero = superávit · abaixo = déficit</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="fiscalStatus">Carregando dados…</div>
+        <canvas id="fiscalChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fontes:</b> Banco Central do Brasil — SGS. Resultado Nominal: série 5012 (R$ milhões) e série 5727 (% PIB).
+        Resultado Primário: série 5078 (R$ milhões) e série 5793 (% PIB). Convenção de sinal: valor positivo = superávit; valor negativo = déficit.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Dívida Líquida do Setor Público</h3>
+          <div class="sub">Setor público consolidado, % do PIB</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="debtStatus">Carregando dados…</div>
+        <canvas id="debtChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fonte:</b> Banco Central do Brasil — SGS, série 4513 (Dívida Líquida do Setor Público, % do PIB, setor público consolidado).
+      </div>
+    </section>
+  </div>
+
+  <div class="page" id="page-atividade" style="display:none">
+    <div class="page-head">
+      <div>
+        <h2>Painel de Atividade</h2>
+        <p>Crescimento real do PIB e da FBCF e hiato do produto (filtro HP), com dados do SIDRA/IBGE.</p>
+      </div>
+      <div>
+        <div class="live"><span class="dot" id="liveDotAtv"></span><span id="lastUpdateAtv">carregando…</span></div>
+        <div id="staleBadgeAtv" style="display:none" class="stale-badge">última atualização automática falhou — exibindo dados em cache</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Crescimento Real — PIB e FBCF</h3>
+          <div class="sub">Variação real anual, %</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><i style="background:var(--blue)"></i>PIB</div>
+        <div class="legend-item"><i style="background:var(--purple)"></i>FBCF</div>
+        <div class="legend-item" style="color:var(--muted-2)">Acima da linha zero = expansão · abaixo = contração</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="growthStatus">Carregando dados…</div>
+        <canvas id="growthChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fonte:</b> IBGE — SIDRA, tabela 6612 (Contas Nacionais Trimestrais, séries encadeadas do índice de volume trimestral, com ajuste sazonal). Agregação anual a partir da soma dos trimestres.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Hiato do Produto</h3>
+          <div class="sub">PIB observado vs. tendência (filtro HP, λ=100), % de desvio</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item" style="color:var(--muted-2)">Acima da linha zero = produto acima do potencial · abaixo = ocioso</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="hiatoStatus">Carregando dados…</div>
+        <canvas id="hiatoChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Metodologia:</b> tendência de longo prazo estimada via filtro Hodrick-Prescott (λ=100) sobre o nível anual do PIB.
+        Hiato = (PIB observado − tendência) / tendência × 100. <b>Fonte:</b> IBGE — SIDRA, tabela 6612.
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Dados via API oficial SGS/BCB · atualizados automaticamente 1x por dia via GitHub Actions
+</footer>
+
+<script>
+const COLORS = {
+  purple: '#9B87F5',
+  purpleSoft: 'rgba(155,135,245,0.14)',
+  blue: '#6FD3FF',
+  blueSoft: 'rgba(111,211,255,0.14)',
+  white: '#F4F2FA',
+  muted: '#8A82A6',
+  grid: 'rgba(255,255,255,0.06)'
+};
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = COLORS.muted;
+
+// --- navegacao entre abas ---
+document.querySelectorAll('nav .tab[data-page]').forEach(tabEl => {
+  tabEl.addEventListener('click', () => {
+    const page = tabEl.dataset.page;
+    document.querySelectorAll('nav .tab').forEach(t => t.classList.toggle('active', t === tabEl));
+    document.querySelectorAll('main .page').forEach(p => {
+      p.style.display = (p.id === 'page-' + page) ? '' : 'none';
+    });
+  });
+});
+
+let DATA_PROMISE = null;
+
+async function getData(){
+  if(!DATA_PROMISE){
+    DATA_PROMISE = fetch('./data/fiscal_data.json', { cache: 'no-store' })
+      .then(res => {
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+  }
+  return DATA_PROMISE;
+}
+
+function toPoints(arr, invertSignal = false){
+  return (arr || []).map(d => {
+    const [day, month, year] = d.data.split('/');
+    const val = invertSignal ? -d.valor : d.valor;
+    return { date: new Date(`${year}-${month}-${day}T00:00:00`), value: val };
+  });
+}
+
+function mergeByDate(seriesA, seriesB){
+  const map = new Map();
+  seriesA.forEach(p => map.set(p.date.getTime(), { date: p.date, a: p.value, b: null }));
+  seriesB.forEach(p => {
+    const key = p.date.getTime();
+    if(map.has(key)) map.get(key).b = p.value;
+    else map.set(key, { date: p.date, a: null, b: p.value });
+  });
+  return Array.from(map.values()).sort((x, y) => x.date - y.date);
+}
+
+function fmtDateTime(iso){
+  const d = new Date(iso);
+  return d.toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function renderHeaderStatus(payload){
+  const dot = document.getElementById('liveDot');
+  const badge = document.getElementById('staleBadge');
+  document.getElementById('lastUpdate').textContent = 'atualizado em ' + fmtDateTime(payload.updated_at);
+  if(payload.had_failure){
+    dot.classList.add('warn');
+    badge.style.display = 'inline-block';
+  }
+}
+
+let fiscalChart, debtChart;
+let fiscalData = { pct: null, brl: null };
+
+async function buildFiscalChart(){
+  const status = document.getElementById('fiscalStatus');
+  try {
+    const payload = await getData();
+    renderHeaderStatus(payload);
+
+    // Invertendo o sinal de todas as séries de NFSP (5727, 5793, 5012, 5078)
+    // para transformar Necessidade (+) em Resultado (Déficit em negativo)
+    const nomPct = toPoints(payload.series.nominal_pct, true);
+    const priPct = toPoints(payload.series.primario_pct, true);
+    const nomBrl = toPoints(payload.series.nominal_brl, true);
+    const priBrl = toPoints(payload.series.primario_brl, true);
+
+    fiscalData.pct = mergeByDate(priPct, nomPct);
+    fiscalData.brl = mergeByDate(priBrl, nomBrl);
+    status.style.display = 'none';
+
+    const labels = fiscalData.pct.map(p => p.date);
+    const ctx = document.getElementById('fiscalChart').getContext('2d');
+    fiscalChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Resultado Primário',
+            data: fiscalData.pct.map(p => p.a),
+            borderColor: COLORS.blue,
+            backgroundColor: COLORS.blueSoft,
+            fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4
+          },
+          {
+            label: 'Resultado Nominal',
+            data: fiscalData.pct.map(p => p.b),
+            borderColor: COLORS.purple,
+            backgroundColor: COLORS.purpleSoft,
+            fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4
+          }
+        ]
+      },
+      options: fiscalOptions('pct')
+    });
+  } catch(err){
+    console.error(err);
+    status.textContent = 'Não foi possível carregar data/fiscal_data.json (' + err.message + ')';
+  }
+}
+
+function fiscalOptions(unit){
+  const isPct = unit === 'pct';
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+        titleColor: COLORS.white, bodyColor: COLORS.muted, padding: 10,
+        callbacks: {
+          label: (ctx) => {
+            const v = ctx.raw;
+            if(v === null || v === undefined) return null;
+            const stat = v >= 0 ? 'superávit' : 'déficit';
+            const val = isPct ? `${v.toFixed(2)}% do PIB` : `R$ ${v.toLocaleString('pt-BR')} milhões`;
+            return `${ctx.dataset.label}: ${val} (${stat})`;
+          }
+        }
+      },
+      annotation: {
+        annotations: {
+          zeroLine: {
+            type: 'line', yMin: 0, yMax: 0,
+            borderColor: 'rgba(255,255,255,0.25)', borderWidth: 1, borderDash: [4,4]
+          }
+        }
+      }
+    },
+    scales: {
+      x: { type: 'time', time: { unit: 'year' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, font: { size: 11 } } },
+      y: {
+        grid: { color: COLORS.grid },
+        ticks: {
+          color: COLORS.muted, font: { family: "'JetBrains Mono', monospace", size: 10.5 },
+          callback: (v) => isPct ? `${v}%` : v.toLocaleString('pt-BR')
+        }
+      }
+    }
+  };
+}
+
+document.getElementById('unitToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if(!btn || !fiscalChart) return;
+  const unit = btn.dataset.unit;
+  document.querySelectorAll('#unitToggle button').forEach(b => b.classList.toggle('on', b === btn));
+  const src = fiscalData[unit];
+  fiscalChart.data.datasets[0].data = src.map(p => p.a);
+  fiscalChart.data.datasets[1].data = src.map(p => p.b);
+  fiscalChart.options = fiscalOptions(unit);
+  fiscalChart.update();
+});
+
+async function buildDebtChart(){
+  const status = document.getElementById('debtStatus');
+  try {
+    const payload = await getData();
+    const series = toPoints(payload.series.divida_liquida_pct);
+    status.style.display = 'none';
+
+    const ctx = document.getElementById('debtChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 340);
+    gradient.addColorStop(0, 'rgba(155,135,245,0.28)');
+    gradient.addColorStop(1, 'rgba(111,211,255,0.02)');
+
+    debtChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: series.map(p => p.date),
+        datasets: [{
+          label: 'Dívida Líquida (% PIB)',
+          data: series.map(p => p.value),
+          borderColor: COLORS.purple,
+          backgroundColor: gradient,
+          fill: true, tension: 0.3, borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4,
+          pointBackgroundColor: COLORS.blue
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+            titleColor: COLORS.white, bodyColor: COLORS.muted, padding: 10,
+            callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)}% do PIB` }
+          }
+        },
+        scales: {
+          x: { type: 'time', time: { unit: 'year' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, font: { size: 11 } } },
+          y: { grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` } }
+        }
+      }
+    });
+  } catch(err){
+    console.error(err);
+    status.textContent = 'Não foi possível carregar data/fiscal_data.json (' + err.message + ')';
+  }
+}
+
+let ACTIVITY_PROMISE = null;
+
+async function getActivityData(){
+  if(!ACTIVITY_PROMISE){
+    ACTIVITY_PROMISE = fetch('./data/activity_data.json', { cache: 'no-store' })
+      .then(res => {
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+  }
+  return ACTIVITY_PROMISE;
+}
+
+function renderActivityHeaderStatus(payload){
+  const dot = document.getElementById('liveDotAtv');
+  const badge = document.getElementById('staleBadgeAtv');
+  document.getElementById('lastUpdateAtv').textContent = 'atualizado em ' + fmtDateTime(payload.updated_at);
+  if(payload.had_failure){
+    dot.classList.add('warn');
+    badge.style.display = 'inline-block';
+  }
+}
+
+async function buildGrowthChart(){
+  const status = document.getElementById('growthStatus');
+  try {
+    const payload = await getActivityData();
+    renderActivityHeaderStatus(payload);
+    const s = payload.series;
+    status.style.display = 'none';
+
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: s.ano,
+        datasets: [
+          {
+            label: 'PIB',
+            data: s.pib_var_pct,
+            borderColor: COLORS.blue,
+            backgroundColor: COLORS.blueSoft,
+            fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4
+          },
+          {
+            label: 'FBCF',
+            data: s.fbcf_var_pct,
+            borderColor: COLORS.purple,
+            backgroundColor: COLORS.purpleSoft,
+            fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+            titleColor: COLORS.white, bodyColor: COLORS.muted, padding: 10,
+            callbacks: {
+              label: (ctx) => {
+                const v = ctx.raw;
+                if(v === null || v === undefined) return null;
+                const stat = v >= 0 ? 'expansão' : 'contração';
+                return `${ctx.dataset.label}: ${v.toFixed(2)}% (${stat})`;
+              }
+            }
+          },
+          annotation: {
+            annotations: {
+              zeroLine: {
+                type: 'line', yMin: 0, yMax: 0,
+                borderColor: 'rgba(255,255,255,0.25)', borderWidth: 1, borderDash: [4,4]
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, font: { size: 11 } } },
+          y: {
+            grid: { color: COLORS.grid },
+            ticks: { color: COLORS.muted, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` }
+          }
+        }
+      }
+    });
+  } catch(err){
+    console.error(err);
+    status.textContent = 'Não foi possível carregar data/activity_data.json (' + err.message + ')';
+  }
+}
+
+async function buildHiatoChart(){
+  const status = document.getElementById('hiatoStatus');
+  try {
+    const payload = await getActivityData();
+    const s = payload.series;
+    status.style.display = 'none';
+
+    const ctx = document.getElementById('hiatoChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 340);
+    gradient.addColorStop(0, 'rgba(155,135,245,0.28)');
+    gradient.addColorStop(1, 'rgba(111,211,255,0.02)');
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: s.ano,
+        datasets: [{
+          label: 'Hiato do Produto',
+          data: s.hiato_pct,
+          borderColor: COLORS.purple,
+          backgroundColor: gradient,
+          fill: true, tension: 0.3, borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4,
+          pointBackgroundColor: COLORS.blue
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+            titleColor: COLORS.white, bodyColor: COLORS.muted, padding: 10,
+            callbacks: {
+              label: (ctx) => {
+                const v = ctx.raw;
+                const stat = v >= 0 ? 'acima do potencial' : 'abaixo do potencial';
+                return `${v.toFixed(2)}% (${stat})`;
+              }
+            }
+          },
+          annotation: {
+            annotations: {
+              zeroLine: {
+                type: 'line', yMin: 0, yMax: 0,
+                borderColor: 'rgba(255,255,255,0.25)', borderWidth: 1, borderDash: [4,4]
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, font: { size: 11 } } },
+          y: { grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` } }
+        }
+      }
+    });
+  } catch(err){
+    console.error(err);
+    status.textContent = 'Não foi possível carregar data/activity_data.json (' + err.message + ')';
+  }
+}
+
+buildFiscalChart();
+buildDebtChart();
+buildGrowthChart();
+buildHiatoChart();
+</script>
+</body>
+</html>
