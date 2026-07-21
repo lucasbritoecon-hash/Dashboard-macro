@@ -21,6 +21,7 @@ SERIES = {
     "nominal_brl": 5012,       # Resultado Nominal, R$ milhoes
     "primario_brl": 5078,      # Resultado Primario, R$ milhoes
     "divida_liquida_pct": 4513,  # Divida Liquida do Setor Publico, % do PIB
+    "divida_bruta_pct": 13762,   # Divida Bruta do Governo Geral, % do PIB (metodologia pos-2008)
 }
 
 BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados"
