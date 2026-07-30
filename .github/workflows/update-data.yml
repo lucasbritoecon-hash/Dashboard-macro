@@ -23,7 +23,7 @@ jobs:
           python-version: '3.11'
 
       - name: Instalar dependencias
-        run: pip install requests pandas statsmodels numpy scipy xlrd
+        run: pip install requests pandas statsmodels numpy scipy xlrd openpyxl
 
       - name: Buscar dados do BCB
         run: python scripts/fetch_bcb_data.py
@@ -34,11 +34,14 @@ jobs:
       - name: Buscar dados de Politica Monetaria (IPCA x Meta)
         run: python scripts/fetch_politica_monetaria.py
 
+      - name: Buscar Receita e Despesa do Governo Geral (Tesouro)
+        run: python scripts/fetch_receita_despesa.py
+
       - name: Commitar se houver mudancas
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/fiscal_data.json data/activity_data.json data/politica_monetaria_data.json
+          git add data/fiscal_data.json data/activity_data.json data/politica_monetaria_data.json data/receita_despesa_data.json
           if git diff --staged --quiet; then
             echo "Sem mudancas nos dados."
           else
