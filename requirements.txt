@@ -4,3 +4,4 @@ statsmodels
 numpy
 scipy
 xlrd
+openpyxl

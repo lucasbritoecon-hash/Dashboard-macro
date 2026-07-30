@@ -124,6 +124,14 @@
     color: var(--muted); font-size:13px; font-family:'JetBrains Mono', monospace; text-align:center; padding:0 20px;
   }
 
+  .rd-table-wrap{ overflow-x:auto; margin-top:14px; border:1px solid var(--border); border-radius:12px; }
+  .rd-table{ width:100%; border-collapse:collapse; font-size:12px; white-space:nowrap; }
+  .rd-table th, .rd-table td{ padding:8px 12px; text-align:right; border-bottom:1px solid var(--border); }
+  .rd-table th:first-child, .rd-table td:first-child{ text-align:left; position:sticky; left:0; background:var(--bg-elev); }
+  .rd-table thead th{ color:var(--muted); font-family:'JetBrains Mono', monospace; font-weight:500; font-size:11px; }
+  .rd-table tbody tr:last-child{ font-weight:600; border-top:1px solid var(--border); }
+  .rd-table tbody tr:hover td{ background:var(--bg-elev-2); }
+
   .foot-note{
     margin-top: 16px; padding-top:14px; border-top: 1px solid var(--border);
     font-size:11.5px; color: var(--white); line-height:1.6;
@@ -184,10 +192,10 @@
     </div>
   </div>
   <nav>
-    <div class="tab active" data-page="fiscal">Fiscal</div>
+    <div class="tab active" data-page="avaliacao">Avaliação MACRO CIEM</div>
+    <div class="tab" data-page="fiscal">Fiscal</div>
     <div class="tab" data-page="atividade">Atividade</div>
     <div class="tab" data-page="politica-monetaria">Política Monetária</div>
-    <div class="tab" data-page="avaliacao">Avaliação MACRO CIEM</div>
     <div class="tab soon">Inflação</div>
     <div class="tab soon">Mercado de Trabalho</div>
     <div class="tab soon">Expectativas</div>
@@ -242,7 +250,7 @@
     <section class="card">
       <div class="card-head">
         <div>
-          <h3>Dívida Líquida e Dívida Bruta do Governo</h3>
+          <h3>Dívida Bruta e Dívida Liquida do Governo</h3>
           <div class="sub">Setor público consolidado, série histórica desde 2007</div>
         </div>
         <div class="toggle-group" id="debtUnitToggle">
@@ -251,8 +259,8 @@
         </div>
       </div>
       <div class="legend-row">
-        <div class="legend-item"><i style="background:var(--purple)"></i>Dívida Líquida do Setor Público</div>
         <div class="legend-item"><i style="background:var(--blue)"></i>Dívida Bruta do Governo Geral</div>
+        <div class="legend-item"><i style="background:var(--purple)"></i>Dívida Líquida do Setor Público</div>
       </div>
       <div class="chart-wrap">
         <div class="chart-status" id="debtStatus">Carregando dados…</div>
@@ -282,6 +290,50 @@
       <div class="foot-note">
         <b>Fontes:</b> Banco Central do Brasil — SGS, série 4510 (Dívida Líquida do Setor Público, % do PIB — Empresas estatais federais)
         e série 4545 (Dívida Líquida do Setor Público, saldos em US$ milhões — Empresas estatais federais).
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Receita e Despesa — Governo Geral</h3>
+          <div class="sub">Composição anual, metodologia GFSM 2014 (STN/IBGE/BCB)</div>
+        </div>
+        <div class="toggle-group" id="rdUnitToggle">
+          <button data-unit="pct" class="on">% do PIB</button>
+          <button data-unit="brl">R$ milhões</button>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+        <div class="toggle-group" id="rdBlockToggle">
+          <button data-block="receita" class="on">Receita</button>
+          <button data-block="despesa">Despesa</button>
+        </div>
+      </div>
+
+      <div class="card-head" style="margin-top:2px;">
+        <div class="sub" style="font-size:12px;">Tabela — período</div>
+        <div class="toggle-group" id="rdPeriodToggle">
+          <button data-period="anual" class="on">Anual</button>
+          <button data-period="trimestral">Trimestral</button>
+        </div>
+      </div>
+
+      <div class="rd-table-wrap">
+        <table class="rd-table" id="rdTable"></table>
+      </div>
+
+      <div class="chart-wrap" style="margin-top:22px;">
+        <div class="chart-status" id="rdStatus">Carregando dados…</div>
+        <canvas id="rdChart"></canvas>
+      </div>
+
+      <div class="foot-note" id="rdFootNote">
+        <b>Fonte:</b> Tesouro Nacional / IBGE / BCB — Estatísticas Fiscais do Governo Geral
+        (<a href="https://www.tesourotransparente.gov.br/publicacoes/estatisticas-fiscais-do-governo-geral/2021/22"
+            target="_blank" style="color:var(--blue)">Tesouro Transparente</a>). Sem API oficial —
+        dado raspado da publicação trimestral em Excel. O gráfico é sempre anual; o toggle
+        Anual/Trimestral acima da tabela só troca o período mostrado nela.
       </div>
     </section>
   </div>
@@ -416,7 +468,7 @@
       <div class="carousel-dots avaliacao-dots" id="avalDots"></div>
       <div class="avaliacao-body" id="avalCorpo">Carregando dados…</div>
       <div class="foot-note">
-        <b>Nota:</b> texto editorial mantido em <code>data/avaliacao_macro_data.json</code> — basta atualizar esse arquivo no repositório para o conteúdo refletir aqui automaticamente.
+        <b>Elaboração:</b> CIEM — Centro de Inteligência e Estudos Macroeconômicos. Todos os direitos reservados.
       </div>
     </section>
   </div>
@@ -710,6 +762,136 @@ document.getElementById('debtUnitToggle').addEventListener('click', (e) => {
   debtChart.update();
 });
 
+const RD_COLORS = [COLORS.purple, COLORS.blue, COLORS.green, '#F5A623', '#E8749B', '#5D9CFF', '#C6A8FF', '#6FE0C4', '#B8B0E0'];
+let rdChart = null;
+let rdPayload = null;
+let rdBlock = 'receita';
+let rdPeriod = 'anual';   // so afeta a tabela
+let rdUnit = 'pct';
+
+async function getReceitaDespesaData(){
+  const res = await fetch('./data/receita_despesa_data.json', { cache: 'no-store' });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+function rdQuarterLabel(q){
+  const [year, roman] = q.split('-');
+  const map = { I: 1, II: 2, III: 3, IV: 4 };
+  return `${map[roman]}T${year.slice(2)}`;
+}
+
+function rdLabels(data, period){
+  return period === 'anual' ? data.years.map(String) : data.quarters.map(rdQuarterLabel);
+}
+
+function rdFmt(v, unit){
+  if(v === null || v === undefined) return '—';
+  return unit === 'pct' ? `${(v * 100).toFixed(2)}%` : v.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+}
+
+function renderRdTable(block, period, unit){
+  const data = rdPayload[block][period];
+  const labels = rdLabels(data, period);
+  const rows = [...data.categorias, { codigo: 'total', nome: block === 'receita' ? 'Receita total' : 'Despesa total', [unit]: data.total[unit] }];
+  const table = document.getElementById('rdTable');
+  if(!table) return;
+  const thead = `<thead><tr><th>Categoria</th>${labels.map(l => `<th>${l}</th>`).join('')}</tr></thead>`;
+  const tbody = `<tbody>${rows.map(r => `<tr><td>${r.nome}</td>${r[unit].map(v => `<td>${rdFmt(v, unit)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  table.innerHTML = thead + tbody;
+}
+
+function renderRdChart(block, unit){
+  // grafico e sempre anual, independente do toggle de periodo da tabela
+  const data = rdPayload[block].anual;
+  const labels = data.years.map(String);
+  const canvas = document.getElementById('rdChart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const datasets = data.categorias.map((c, i) => ({
+    label: c.nome,
+    data: c[unit],
+    backgroundColor: RD_COLORS[i % RD_COLORS.length],
+    stack: 'total'
+  }));
+  const opts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { color: COLORS.white, boxWidth: 10, font: { size: 10.5 } } },
+      tooltip: {
+        backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+        titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+        callbacks: { label: (c) => `${c.dataset.label}: ${rdFmt(c.raw, unit)}${unit === 'pct' ? ' do PIB' : ' milhões'}` }
+      }
+    },
+    scales: {
+      x: { stacked: true, grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } } },
+      y: { stacked: true, grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => unit === 'pct' ? `${(v * 100).toFixed(0)}%` : v.toLocaleString('pt-BR') } }
+    }
+  };
+  if(rdChart){ rdChart.destroy(); }
+  rdChart = new Chart(ctx, { type: 'bar', data: { labels, datasets }, options: opts });
+}
+
+async function buildReceitaDespesa(){
+  const status = document.getElementById('rdStatus');
+  try {
+    rdPayload = await getReceitaDespesaData();
+    if(!rdPayload.receita || !rdPayload.despesa) throw new Error('payload sem receita/despesa');
+    status.style.display = 'none';
+    renderRdTable(rdBlock, rdPeriod, rdUnit);
+    renderRdChart(rdBlock, rdUnit);
+    if(rdPayload.had_failure){
+      const footNote = document.getElementById('rdFootNote');
+      const warn = document.createElement('div');
+      warn.style.color = '#F5A623';
+      warn.textContent = '⚠ última coleta automática falhou — mostrando cache anterior (atualizado em ' + new Date(rdPayload.updated_at).toLocaleDateString('pt-BR') + ').';
+      footNote.prepend(warn);
+    }
+  } catch(err){
+    console.error(err);
+    status.textContent = 'Não foi possível carregar data/receita_despesa_data.json (' + err.message + ')';
+  }
+}
+
+function wireReceitaDespesaToggles(){
+  document.getElementById('rdBlockToggle')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn || !rdPayload) return;
+    rdBlock = btn.dataset.block;
+    document.querySelectorAll('#rdBlockToggle button').forEach(b => b.classList.toggle('on', b === btn));
+    renderRdTable(rdBlock, rdPeriod, rdUnit);
+    renderRdChart(rdBlock, rdUnit);
+  });
+
+  // so troca a tabela -- o grafico continua anual
+  document.getElementById('rdPeriodToggle')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn || !rdPayload) return;
+    rdPeriod = btn.dataset.period;
+    document.querySelectorAll('#rdPeriodToggle button').forEach(b => b.classList.toggle('on', b === btn));
+    renderRdTable(rdBlock, rdPeriod, rdUnit);
+  });
+
+  document.getElementById('rdUnitToggle')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn || !rdPayload) return;
+    rdUnit = btn.dataset.unit;
+    document.querySelectorAll('#rdUnitToggle button').forEach(b => b.classList.toggle('on', b === btn));
+    renderRdTable(rdBlock, rdPeriod, rdUnit);
+    renderRdChart(rdBlock, rdUnit);
+  });
+}
+
+// tudo blindado: um erro aqui (elemento ausente, JSON malformado, etc.)
+// fica preso neste bloco e nunca impede o resto do boot (política monetária,
+// atividade, avaliação) de rodar.
+try {
+  wireReceitaDespesaToggles();
+} catch(err){
+  console.error('[receita-despesa] falha ao registrar os toggles:', err);
+}
+
 let ACTIVITY_PROMISE = null;
 
 async function getActivityData(){
@@ -949,6 +1131,7 @@ async function buildDebtEstataisChart(){
 
 buildFiscalChart();
 buildDebtChart();
+try { buildReceitaDespesa(); } catch(err){ console.error('[receita-despesa] falha ao iniciar:', err); }
 buildDebtEstataisChart();
 buildGrowthChart();
 buildHiatoChart();
