@@ -20,8 +20,12 @@ SERIES = {
     "primario_pct": 5793,      # Resultado Primario, % do PIB
     "nominal_brl": 5012,       # Resultado Nominal, R$ milhoes
     "primario_brl": 5078,      # Resultado Primario, R$ milhoes
-    "divida_liquida_pct": 4513,  # Divida Liquida do Setor Publico, % do PIB
-    "divida_bruta_pct": 13762,   # Divida Bruta do Governo Geral, % do PIB (metodologia pos-2008)
+    "divida_liquida_pct": 4513,       # Divida Liquida do Setor Publico, % do PIB
+    "divida_bruta_pct": 13762,        # Divida Bruta do Governo Geral, % do PIB (metodologia pos-2008)
+    "divida_liquida_brl": 4478,       # Divida Liquida do Setor Publico, R$ milhoes (valor nominal)
+    "divida_bruta_brl": 13761,        # Divida Bruta do Governo Geral, R$ milhoes (valor nominal, metodologia pos-2008)
+    "divida_liquida_estatais_pct": 4510,  # Divida Liquida do Setor Publico (% PIB) - Empresas estatais federais
+    "divida_liquida_estatais_usd": 4545,  # Divida Liquida do Setor Publico, saldos em US$ milhoes - Empresas estatais federais
 }
 
 BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados"
