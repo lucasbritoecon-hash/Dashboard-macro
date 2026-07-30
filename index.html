@@ -19,6 +19,7 @@
     --purple-soft: rgba(155,135,245,0.16);
     --blue: #6FD3FF;
     --blue-soft: rgba(111,211,255,0.14);
+    --green: #7ED9A8;
     --white: #F4F2FA;
     --muted: #8A82A6;
     --muted-2: #5D5578;
@@ -113,6 +114,9 @@
   .legend-row{ display:flex; gap:18px; margin: 10px 0 4px; flex-wrap:wrap;}
   .legend-item{ display:flex; align-items:center; gap:7px; font-size:12.5px; color: var(--white); }
   .legend-item i{ width:12px; height:12px; border-radius:3px; display:inline-block; }
+  .legend-item i.line{ height:2px; border-radius:0; margin-top:0; }
+  .legend-item i.dashed{ background: repeating-linear-gradient(90deg, var(--purple) 0 6px, transparent 6px 10px); height:2px; border-radius:0; width:16px; }
+  .legend-item i.band{ background: var(--purple-soft); border:1px solid var(--white); }
 
   .chart-wrap{ position:relative; height: 340px; margin-top: 14px; }
   .chart-status{
@@ -135,6 +139,33 @@
   footer{ text-align:center; color: var(--muted-2); font-size:12px; padding: 10px 0 30px; }
   footer a{ color: var(--blue); text-decoration:none; }
 
+  .carousel-nav{ display:flex; gap:6px; }
+  .carousel-arrow{
+    width:30px; height:30px; border-radius:8px; border:1px solid var(--border);
+    background: var(--bg-elev-2); color: var(--white); font-size:18px; line-height:1;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition: all .15s ease;
+  }
+  .carousel-arrow:hover{ border-color: var(--purple); color: var(--purple); }
+  .carousel-arrow:disabled{ opacity:0.35; cursor:default; }
+  .carousel-dots{ display:flex; gap:8px; margin: 2px 0 18px; }
+  .carousel-dot{
+    width:9px; height:9px; border-radius:50%; background: var(--muted-2);
+    transition: all .2s ease; cursor:pointer; border:none; padding:0;
+  }
+  .carousel-dot.active{ background: linear-gradient(135deg, var(--purple), var(--blue)); width:22px; border-radius:5px; }
+
+  .avaliacao-card{ position:relative; }
+  .avaliacao-nav{ position:absolute; top:26px; right:26px; }
+  .avaliacao-title{
+    font-family:'Space Grotesk', sans-serif; font-size:17px; font-weight:600;
+    text-align:center; margin:0 70px 6px;
+  }
+  .avaliacao-dots{ justify-content:center; }
+  .avaliacao-body{
+    white-space:pre-line; text-align:justify; font-size:14.5px; line-height:1.75; color: var(--white);
+  }
+
   @media (max-width: 720px){
     header{ padding:16px 18px; flex-wrap:wrap; gap:12px; }
     main{ padding:26px 18px 60px; }
@@ -155,6 +186,8 @@
   <nav>
     <div class="tab active" data-page="fiscal">Fiscal</div>
     <div class="tab" data-page="atividade">Atividade</div>
+    <div class="tab" data-page="politica-monetaria">Política Monetária</div>
+    <div class="tab" data-page="avaliacao">Avaliação MACRO CIEM</div>
     <div class="tab soon">Inflação</div>
     <div class="tab soon">Mercado de Trabalho</div>
     <div class="tab soon">Expectativas</div>
@@ -209,32 +242,46 @@
     <section class="card">
       <div class="card-head">
         <div>
-          <h3>Dívida Líquida do Setor Público</h3>
-          <div class="sub">Setor público consolidado, % do PIB</div>
+          <h3>Dívida Líquida e Dívida Bruta do Governo</h3>
+          <div class="sub">Setor público consolidado, série histórica desde 2007</div>
         </div>
+        <div class="toggle-group" id="debtUnitToggle">
+          <button data-unit="pct" class="on">% do PIB</button>
+          <button data-unit="brl">R$ milhões</button>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><i style="background:var(--purple)"></i>Dívida Líquida do Setor Público</div>
+        <div class="legend-item"><i style="background:var(--blue)"></i>Dívida Bruta do Governo Geral</div>
       </div>
       <div class="chart-wrap">
         <div class="chart-status" id="debtStatus">Carregando dados…</div>
         <canvas id="debtChart"></canvas>
       </div>
       <div class="foot-note">
-        <b>Fonte:</b> Banco Central do Brasil — SGS, série 4513 (Dívida Líquida do Setor Público, % do PIB, setor público consolidado).
+        <b>Fontes:</b> Banco Central do Brasil — SGS. Dívida Líquida do Setor Público: série 4513 (% do PIB) e série 4478 (R$ milhões).
+        Dívida Bruta do Governo Geral: série 13762 (% do PIB) e série 13761 (R$ milhões), metodologia vigente a partir de 2008.
       </div>
     </section>
 
     <section class="card">
       <div class="card-head">
         <div>
-          <h3>Dívida Bruta do Governo Geral</h3>
-          <div class="sub">% do PIB · metodologia vigente a partir de 2008</div>
+          <h3>Dívida Líquida — Empresas Estatais Federais</h3>
+          <div class="sub">Setor público consolidado, total de empresas estatais federais</div>
         </div>
       </div>
+      <div class="legend-row">
+        <div class="legend-item"><i style="background:var(--purple)"></i>% do PIB (eixo esquerdo)</div>
+        <div class="legend-item"><i style="background:var(--blue)"></i>US$ milhões (eixo direito)</div>
+      </div>
       <div class="chart-wrap">
-        <div class="chart-status" id="grossDebtStatus">Carregando dados…</div>
-        <canvas id="grossDebtChart"></canvas>
+        <div class="chart-status" id="debtEstataisStatus">Carregando dados…</div>
+        <canvas id="debtEstataisChart"></canvas>
       </div>
       <div class="foot-note">
-        <b>Fonte:</b> Banco Central do Brasil — SGS, série 13762 (Dívida Bruta do Governo Geral, % do PIB).
+        <b>Fontes:</b> Banco Central do Brasil — SGS, série 4510 (Dívida Líquida do Setor Público, % do PIB — Empresas estatais federais)
+        e série 4545 (Dívida Líquida do Setor Público, saldos em US$ milhões — Empresas estatais federais).
       </div>
     </section>
   </div>
@@ -298,18 +345,93 @@
       </div>
     </section>
   </div>
+
+  <div class="page" id="page-politica-monetaria" style="display:none">
+    <div class="page-head">
+      <div>
+        <h2>Condução de Política Monetária</h2>
+        <p>IPCA acumulado em 12 meses frente à banda de meta de inflação, com destaque para o horizonte relevante de política monetária.</p>
+      </div>
+      <div>
+        <div class="live">
+          <span class="dot" id="liveDotPM"></span>
+          <div>
+            <div class="live-title">Elaboração: CIEM</div>
+            <div class="live-sub" id="lastUpdatePM">Atualizado em —</div>
+          </div>
+        </div>
+        <div id="staleBadgePM" style="display:none" class="stale-badge">última atualização automática falhou — exibindo dados em cache</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>IPCA x Meta de Inflação</h3>
+          <div class="sub" id="cardSubPM">Acumulado em 12 meses · janela do horizonte relevante em destaque</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><i class="line" style="background:var(--blue)"></i>IPCA acum. 12m (realizado)</div>
+        <div class="legend-item"><i class="dashed"></i>IPCA acum. 12m (projeção)</div>
+        <div class="legend-item"><i class="band"></i>Horizonte relevante</div>
+        <div class="legend-item" style="color:var(--white)">Faixa sombreada = intervalo de tolerância da meta</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="pmStatus">Carregando dados…</div>
+        <canvas id="pmChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fontes:</b> IPCA — SGS/Banco Central do Brasil (série 433). Meta de inflação — Conselho Monetário Nacional.
+        Projeção — inflação implícita (curva nominal Prefixado/NTN-F x curva real NTN-B, interpolação por spline cúbica), Tesouro Direto/CIEM.
+        Focus mensal — mediana das expectativas de mercado informadas ao BCB nos últimos 30 dias (API Olinda/BCB).<br>
+        <b>Horizonte relevante:</b> janela de <span id="nTrimestresPM">6</span> trimestres a partir do último mês com IPCA realizado.
+      </div>
+    </section>
+  </div>
+
+  <div class="page" id="page-avaliacao" style="display:none">
+    <div class="page-head">
+      <div>
+        <h2>Avaliação Macro CIEM</h2>
+        <p>Conclusões qualitativas do cenário macroeconômico brasileiro, atualizadas periodicamente pela equipe CIEM.</p>
+      </div>
+      <div>
+        <div class="live">
+          <span class="dot" id="liveDotAval"></span>
+          <div>
+            <div class="live-title">Elaboração: CIEM</div>
+            <div class="live-sub" id="lastUpdateAval">Atualizado em —</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="card avaliacao-card">
+      <div class="carousel-nav avaliacao-nav">
+        <button class="carousel-arrow" id="avalPrev" aria-label="Texto anterior">&#8249;</button>
+        <button class="carousel-arrow" id="avalNext" aria-label="Próximo texto">&#8250;</button>
+      </div>
+      <h3 id="avalTitulo" class="avaliacao-title">Carregando…</h3>
+      <div class="carousel-dots avaliacao-dots" id="avalDots"></div>
+      <div class="avaliacao-body" id="avalCorpo">Carregando dados…</div>
+      <div class="foot-note">
+        <b>Nota:</b> texto editorial mantido em <code>data/avaliacao_macro_data.json</code> — basta atualizar esse arquivo no repositório para o conteúdo refletir aqui automaticamente.
+      </div>
+    </section>
+  </div>
 </main>
 
 <footer>
   Dados via API oficial SGS/BCB · atualizados automaticamente 1x por dia via GitHub Actions
 </footer>
-
 <script>
 const COLORS = {
   purple: '#9B87F5',
   purpleSoft: 'rgba(155,135,245,0.14)',
   blue: '#6FD3FF',
   blueSoft: 'rgba(111,211,255,0.14)',
+  green: '#7ED9A8',
   white: '#F4F2FA',
   muted: '#8A82A6',
   grid: 'rgba(255,255,255,0.06)'
@@ -457,7 +579,7 @@ function fiscalOptions(unit){
       }
     },
     scales: {
-      x: { type: 'time', time: { unit: 'year' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } } },
+      x: { type: 'time', time: { unit: 'year', tooltipFormat: 'MMM/yyyy' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } } },
       y: {
         grid: { color: COLORS.grid },
         ticks: {
@@ -481,53 +603,112 @@ document.getElementById('unitToggle').addEventListener('click', (e) => {
   fiscalChart.update();
 });
 
+function filterFrom(points, year){
+  return points.filter(p => p.date.getFullYear() >= year);
+}
+
+let debtData = { pct: null, brl: null };
+
+function debtOptions(unit){
+  const isPct = unit === 'pct';
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+        titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+        callbacks: {
+          label: (ctx) => {
+            const v = ctx.raw;
+            if(v === null || v === undefined) return null;
+            const val = isPct ? `${v.toFixed(2)}% do PIB` : `R$ ${v.toLocaleString('pt-BR')} milhões`;
+            return `${ctx.dataset.label}: ${val}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: { type: 'time', time: { unit: 'year', tooltipFormat: 'MMM/yyyy' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } } },
+      y: {
+        grid: { color: COLORS.grid },
+        ticks: {
+          color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 },
+          callback: (v) => isPct ? `${v}%` : v.toLocaleString('pt-BR')
+        }
+      }
+    }
+  };
+}
+
 async function buildDebtChart(){
   const status = document.getElementById('debtStatus');
   try {
     const payload = await getData();
-    const series = toPoints(payload.series.divida_liquida_pct);
+
+    const liqPct = filterFrom(toPoints(payload.series.divida_liquida_pct), 2007);
+    const brutaPct = filterFrom(toPoints(payload.series.divida_bruta_pct), 2007);
+    const liqBrl = filterFrom(toPoints(payload.series.divida_liquida_brl), 2007);
+    const brutaBrl = filterFrom(toPoints(payload.series.divida_bruta_brl), 2007);
+
+    debtData.pct = mergeByDate(liqPct, brutaPct);
+    debtData.brl = mergeByDate(liqBrl, brutaBrl);
     status.style.display = 'none';
 
+    const labels = debtData.pct.map(p => p.date);
     const ctx = document.getElementById('debtChart').getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 340);
-    gradient.addColorStop(0, 'rgba(155,135,245,0.28)');
-    gradient.addColorStop(1, 'rgba(111,211,255,0.02)');
-
     debtChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: series.map(p => p.date),
-        datasets: [{
-          label: 'Dívida Líquida (% PIB)',
-          data: series.map(p => p.value),
-          borderColor: COLORS.purple,
-          backgroundColor: gradient,
-          fill: true, tension: 0.3, borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4,
-          pointBackgroundColor: COLORS.blue
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
-            titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
-            callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)}% do PIB` }
+        labels,
+        datasets: [
+          {
+            label: 'Dívida Líquida do Setor Público',
+            data: debtData.pct.map(p => p.a),
+            borderColor: COLORS.purple,
+            backgroundColor: COLORS.purpleSoft,
+            fill: true, tension: 0.3, borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4
+          },
+          {
+            label: 'Dívida Bruta do Governo Geral',
+            data: debtData.pct.map(p => p.b),
+            borderColor: COLORS.blue,
+            backgroundColor: COLORS.blueSoft,
+            fill: true, tension: 0.3, borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4
           }
-        },
-        scales: {
-          x: { type: 'time', time: { unit: 'year' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } } },
-          y: { grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` } }
-        }
-      }
+        ]
+      },
+      options: debtOptions('pct')
     });
   } catch(err){
     console.error(err);
     status.textContent = 'Não foi possível carregar data/fiscal_data.json (' + err.message + ')';
   }
 }
+
+document.getElementById('debtUnitToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if(!btn || !debtChart) return;
+  const unit = btn.dataset.unit;
+  const status = document.getElementById('debtStatus');
+  const src = debtData[unit];
+
+  if(!src || src.length === 0){
+    document.querySelectorAll('#debtUnitToggle button').forEach(b => b.classList.toggle('on', b.dataset.unit === 'pct'));
+    status.textContent = 'Série em R$ ainda não coletada — rode scripts/fetch_bcb_data.py (séries 4478 e 13761) para popular data/fiscal_data.json.';
+    status.style.display = 'flex';
+    return;
+  }
+
+  status.style.display = 'none';
+  document.querySelectorAll('#debtUnitToggle button').forEach(b => b.classList.toggle('on', b === btn));
+  debtChart.data.labels = src.map(p => p.date);
+  debtChart.data.datasets[0].data = src.map(p => p.a);
+  debtChart.data.datasets[1].data = src.map(p => p.b);
+  debtChart.options = debtOptions(unit);
+  debtChart.update();
+});
 
 let ACTIVITY_PROMISE = null;
 
@@ -685,19 +866,21 @@ async function buildHiatoChart(){
   }
 }
 
-async function buildGrossDebtChart(){
-  const status = document.getElementById('grossDebtStatus');
+async function buildDebtEstataisChart(){
+  const status = document.getElementById('debtEstataisStatus');
   try {
     const payload = await getData();
-    const series = toPoints(payload.series.divida_bruta_pct);
+    const pctSeries = toPoints(payload.series.divida_liquida_estatais_pct);
+    const usdSeries = toPoints(payload.series.divida_liquida_estatais_usd);
 
-    if(series.length === 0){
-      status.textContent = 'Série ainda não coletada — rode scripts/fetch_bcb_data.py (série 13762) para popular data/fiscal_data.json.';
+    if(pctSeries.length === 0 && usdSeries.length === 0){
+      status.textContent = 'Séries ainda não coletadas — rode scripts/fetch_bcb_data.py (séries 4510 e 4545) para popular data/fiscal_data.json.';
       return;
     }
     status.style.display = 'none';
 
-    const ctx = document.getElementById('grossDebtChart').getContext('2d');
+    const merged = mergeByDate(pctSeries, usdSeries);
+    const ctx = document.getElementById('debtEstataisChart').getContext('2d');
     const gradient = ctx.createLinearGradient(0, 0, 0, 340);
     gradient.addColorStop(0, 'rgba(155,135,245,0.28)');
     gradient.addColorStop(1, 'rgba(111,211,255,0.02)');
@@ -705,15 +888,25 @@ async function buildGrossDebtChart(){
     new Chart(ctx, {
       type: 'line',
       data: {
-        labels: series.map(p => p.date),
-        datasets: [{
-          label: 'Dívida Bruta do Governo Geral (% PIB)',
-          data: series.map(p => p.value),
-          borderColor: COLORS.purple,
-          backgroundColor: gradient,
-          fill: true, tension: 0.3, borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4,
-          pointBackgroundColor: COLORS.blue
-        }]
+        labels: merged.map(p => p.date),
+        datasets: [
+          {
+            label: '% do PIB',
+            data: merged.map(p => p.a),
+            borderColor: COLORS.purple,
+            backgroundColor: gradient,
+            fill: true, tension: 0.3, borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4,
+            yAxisID: 'y'
+          },
+          {
+            label: 'US$ milhões',
+            data: merged.map(p => p.b),
+            borderColor: COLORS.blue,
+            backgroundColor: 'transparent',
+            fill: false, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+            yAxisID: 'y1'
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -723,12 +916,28 @@ async function buildGrossDebtChart(){
           tooltip: {
             backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
             titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
-            callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)}% do PIB` }
+            callbacks: {
+              label: (ctx) => {
+                const v = ctx.raw;
+                if(v === null || v === undefined) return null;
+                const val = ctx.dataset.yAxisID === 'y' ? `${v.toFixed(2)}%` : `US$ ${v.toLocaleString('pt-BR')} milhões`;
+                return `${ctx.dataset.label}: ${val}`;
+              }
+            }
           }
         },
         scales: {
-          x: { type: 'time', time: { unit: 'year' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } } },
-          y: { grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` } }
+          x: { type: 'time', time: { unit: 'year', tooltipFormat: 'MMM/yyyy' }, grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } } },
+          y: {
+            position: 'left',
+            grid: { color: COLORS.grid },
+            ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` }
+          },
+          y1: {
+            position: 'right',
+            grid: { display: false },
+            ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => v.toLocaleString('pt-BR') }
+          }
         }
       }
     });
@@ -740,9 +949,325 @@ async function buildGrossDebtChart(){
 
 buildFiscalChart();
 buildDebtChart();
-buildGrossDebtChart();
+buildDebtEstataisChart();
 buildGrowthChart();
 buildHiatoChart();
+
+// ============================================================
+// Política Monetária — IPCA x Meta de Inflação
+// ============================================================
+
+let PM_DATA_PROMISE = null;
+
+async function getPolMonData(){
+  if(!PM_DATA_PROMISE){
+    PM_DATA_PROMISE = fetch('./data/politica_monetaria_data.json', { cache: 'no-store' })
+      .then(res => {
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+  }
+  return PM_DATA_PROMISE;
+}
+
+function fmtMesAnoPM(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleString('pt-BR', { month: 'short', year: 'numeric' });
+}
+
+function renderPMHeaderStatus(payload){
+  const dot = document.getElementById('liveDotPM');
+  const badge = document.getElementById('staleBadgePM');
+  document.getElementById('lastUpdatePM').textContent = 'Atualizado em ' + fmtDateTime(payload.updated_at);
+  if(payload.had_failure){
+    dot.classList.add('warn');
+    badge.style.display = 'inline-block';
+  }
+}
+
+async function buildPolMonChart(){
+  const status = document.getElementById('pmStatus');
+  try {
+    const payload = await getPolMonData();
+    renderPMHeaderStatus(payload);
+    const s = payload.series;
+    const dataBase = payload.data_base;
+    const nTrimestres = payload.horizonte_relevante_trimestres || 6;
+    document.getElementById('nTrimestresPM').textContent = nTrimestres;
+
+    if(dataBase){
+      document.getElementById('cardSubPM').textContent =
+        `Acumulado em 12 meses · horizonte relevante a partir de ${fmtMesAnoPM(dataBase)}`;
+    }
+
+    // fim do horizonte = data-base + 3*n meses
+    let horizonteFim = null;
+    if(dataBase){
+      const d = new Date(dataBase + 'T00:00:00');
+      d.setMonth(d.getMonth() + 3 * nTrimestres);
+      horizonteFim = d.toISOString().slice(0, 10);
+    }
+
+    status.style.display = 'none';
+
+    const ctx = document.getElementById('pmChart').getContext('2d');
+
+    const annotations = {};
+
+    // marco legal: início da sistemática de meta contínua (Decreto 12.079/2024
+    // e Resolução CMN 5.141/2024, vigência a partir de 01/01/2025)
+    const inicioMetaContinua = '2025-01-01';
+    annotations.inicioMetaContinua = {
+      type: 'line',
+      xMin: inicioMetaContinua,
+      xMax: inicioMetaContinua,
+      borderColor: COLORS.white,
+      borderWidth: 1.4,
+      borderDash: [5, 4],
+      hitTolerance: 6,
+      label: {
+        display: false,
+        content: 'Início da sistemática de meta contínua',
+        color: COLORS.white,
+        rotation: 90,
+        position: { x: 'start', y: 'center' },
+        font: { size: 10, family: "'JetBrains Mono', monospace" },
+        padding: 4
+      },
+      enter({ element }) {
+        element.label.options.display = true;
+        element.chart.draw();
+      },
+      leave({ element }) {
+        element.label.options.display = false;
+        element.chart.draw();
+      }
+    };
+
+    if(dataBase && horizonteFim){
+      annotations.horizonteBox = {
+        type: 'box',
+        xMin: dataBase,
+        xMax: horizonteFim,
+        backgroundColor: COLORS.purpleSoft,
+        borderColor: COLORS.white,
+        borderWidth: 1,
+        borderDash: [3, 3],
+        label: {
+          display: true,
+          content: `Horizonte relevante (${nTrimestres}t)`,
+          color: COLORS.white,
+          position: { x: 'center', y: 'start' },
+          font: { size: 11, family: "'JetBrains Mono', monospace" },
+          padding: 4
+        }
+      };
+    }
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: s.datas,
+        datasets: [
+          {
+            label: 'Teto da meta',
+            data: s.meta_teto,
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(93,85,120,0.28)',
+            fill: '+1',
+            pointRadius: 0,
+            tension: 0
+          },
+          {
+            label: 'Piso da meta',
+            data: s.meta_piso,
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(93,85,120,0.28)',
+            fill: false,
+            pointRadius: 0,
+            tension: 0
+          },
+          {
+            label: 'Centro da meta',
+            data: s.meta_centro,
+            borderColor: COLORS.muted,
+            borderDash: [4, 3],
+            borderWidth: 1.3,
+            pointRadius: 0,
+            fill: false,
+            tension: 0
+          },
+          {
+            label: 'IPCA acum. 12m (realizado)',
+            data: s.ipca_acum12_realizado,
+            borderColor: COLORS.blue,
+            backgroundColor: COLORS.blueSoft,
+            borderWidth: 2.4,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            fill: false,
+            tension: 0.25,
+            spanGaps: false
+          },
+          {
+            label: 'IPCA implícito — cupom zero (LTN × NTN-B Principal)',
+            data: s.ipca_acum12_projecao_zero,
+            borderColor: COLORS.purple,
+            borderDash: [6, 4],
+            borderWidth: 2.4,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            fill: false,
+            tension: 0.25,
+            spanGaps: false
+          },
+          {
+            label: 'IPCA implícito — misturado (todos os títulos)',
+            data: s.ipca_acum12_projecao_misturado,
+            borderColor: '#F58AA8',
+            borderDash: [2, 3],
+            borderWidth: 1.8,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            fill: false,
+            tension: 0.25,
+            spanGaps: false
+          },
+          {
+            // OBSERVAÇÃO: esta série é a mediana do Focus mensal informada
+            // ao BCB nos ÚLTIMOS 30 DIAS (base_calculo=0), não só a coleta
+            // do dia — ver scripts/focus_mensal.py.
+            label: 'Focus mensal (mediana, BCB — janela de 30 dias)',
+            data: s.ipca_acum12_focus,
+            borderColor: COLORS.green,
+            borderDash: [1, 2],
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            fill: false,
+            tension: 0.25,
+            spanGaps: false
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              color: COLORS.white,
+              font: { size: 10.5, family: "'JetBrains Mono', monospace" },
+              boxWidth: 14,
+              filter: (item) => item.text.startsWith('IPCA') || item.text.startsWith('Focus')
+            }
+          },
+          tooltip: {
+            backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+            titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+            filter: (item) => item.raw !== null && item.raw !== undefined,
+            callbacks: {
+              label: (ctx) => {
+                if(ctx.raw === null || ctx.raw === undefined) return null;
+                return `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%`;
+              }
+            }
+          },
+          annotation: { annotations }
+        },
+        scales: {
+          x: {
+            type: 'time', time: { unit: 'quarter', displayFormats: { quarter: 'MMM/yy' }, tooltipFormat: 'MMM/yyyy' },
+            grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } }
+          },
+          y: {
+            grid: { color: COLORS.grid },
+            ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` }
+          }
+        }
+      }
+    });
+  } catch(err){
+    console.error(err);
+    status.textContent = 'Não foi possível carregar data/politica_monetaria_data.json (' + err.message + ')';
+  }
+}
+
+buildPolMonChart();
+
+// ============================================================
+// Avaliação MACRO CIEM — texto editorial em carrossel
+// ============================================================
+
+let AVAL_PROMISE = null;
+
+async function getAvalData(){
+  if(!AVAL_PROMISE){
+    AVAL_PROMISE = fetch('./data/avaliacao_macro_data.json', { cache: 'no-store' })
+      .then(res => {
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+  }
+  return AVAL_PROMISE;
+}
+
+let avalTextos = [];
+let avalIndex = 0;
+
+function renderAval(){
+  const item = avalTextos[avalIndex];
+  if(!item) return;
+  document.getElementById('avalTitulo').textContent = item.titulo;
+  document.getElementById('avalCorpo').textContent = item.corpo;
+  document.querySelectorAll('#avalDots .carousel-dot').forEach((d, i) => d.classList.toggle('active', i === avalIndex));
+  document.getElementById('avalPrev').disabled = avalIndex === 0;
+  document.getElementById('avalNext').disabled = avalIndex === avalTextos.length - 1;
+}
+
+async function buildAvaliacao(){
+  const corpo = document.getElementById('avalCorpo');
+  try {
+    const payload = await getAvalData();
+    avalTextos = payload.textos || [];
+
+    if(payload.updated_at){
+      document.getElementById('lastUpdateAval').textContent = 'Atualizado em ' + fmtDateTime(payload.updated_at);
+    }
+
+    const dotsWrap = document.getElementById('avalDots');
+    dotsWrap.innerHTML = '';
+    avalTextos.forEach((_, i) => {
+      const d = document.createElement('button');
+      d.className = 'carousel-dot';
+      d.setAttribute('aria-label', 'Ir para parte ' + (i + 1));
+      d.addEventListener('click', () => { avalIndex = i; renderAval(); });
+      dotsWrap.appendChild(d);
+    });
+
+    if(avalTextos.length === 0){
+      corpo.textContent = 'Nenhum texto cadastrado ainda em data/avaliacao_macro_data.json.';
+      return;
+    }
+
+    avalIndex = 0;
+    renderAval();
+  } catch(err){
+    console.error(err);
+    corpo.textContent = 'Não foi possível carregar data/avaliacao_macro_data.json (' + err.message + ')';
+  }
+}
+
+document.getElementById('avalPrev').addEventListener('click', () => {
+  if(avalIndex > 0){ avalIndex--; renderAval(); }
+});
+document.getElementById('avalNext').addEventListener('click', () => {
+  if(avalIndex < avalTextos.length - 1){ avalIndex++; renderAval(); }
+});
+
+buildAvaliacao();
 </script>
 </body>
 </html>

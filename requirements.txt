@@ -1,0 +1,6 @@
+requests
+pandas
+statsmodels
+numpy
+scipy
+xlrd
