@@ -196,7 +196,7 @@
     <div class="tab" data-page="fiscal">Fiscal</div>
     <div class="tab" data-page="atividade">Atividade</div>
     <div class="tab" data-page="politica-monetaria">Política Monetária</div>
-    <div class="tab soon">Inflação</div>
+    <div class="tab" data-page="inflacao">Inflação</div>
     <div class="tab soon">Mercado de Trabalho</div>
     <div class="tab soon">Expectativas</div>
   </nav>
@@ -438,6 +438,119 @@
         Projeção — inflação implícita (curva nominal Prefixado/NTN-F x curva real NTN-B, interpolação por spline cúbica), Tesouro Direto/CIEM.
         Focus mensal — mediana das expectativas de mercado informadas ao BCB nos últimos 30 dias (API Olinda/BCB).<br>
         <b>Horizonte relevante:</b> janela de <span id="nTrimestresPM">6</span> trimestres a partir do último mês com IPCA realizado.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Evolução de Taxa de Juros Real</h3>
+          <div class="sub" id="cardSubJurosReal">Selic (fim de ano) x IPCA (acumulado no ano)</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><i class="line" style="background:var(--blue)"></i>Selic</div>
+        <div class="legend-item"><i class="line" style="background:var(--purple)"></i>IPCA acum. no ano</div>
+        <div class="legend-item"><i style="background:var(--white); opacity:0.5"></i>Área = juro real (Fisher)</div>
+        <div class="legend-item" style="color:var(--white)">Ano em curso = dado mais recente disponível (parcial)</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="jurosRealStatus">Carregando dados…</div>
+        <canvas id="jurosRealChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fontes:</b> Banco Central do Brasil — SGS. Selic definida pelo COPOM: série 432 (% a.a., última leitura do ano).
+        IPCA: série 433 (% mensal, acumulado composto de janeiro a dezembro). Juro real = (1 + Selic) / (1 + IPCA acum. no ano) − 1.<br>
+        Para o ano em curso (ainda sem fechamento), usa-se a Selic mais recente e o IPCA acumulado até o último mês disponível — valor parcial, sem projeção.
+      </div>
+    </section>
+  </div>
+
+  <div class="page" id="page-inflacao" style="display:none">
+    <div class="page-head">
+      <div>
+        <h2>IPCA — Decomposição</h2>
+        <p>Variação por grupo, índice de difusão e a quebra entre preços livres/monitorados e por durabilidade, com dados do SGS/Banco Central do Brasil.</p>
+      </div>
+      <div>
+        <div class="live">
+          <span class="dot" id="liveDotInfl"></span>
+          <div>
+            <div class="live-title">Elaboração: CIEM</div>
+            <div class="live-sub" id="lastUpdateInfl">Atualizado em —</div>
+          </div>
+        </div>
+        <div id="staleBadgeInfl" style="display:none" class="stale-badge">última atualização automática falhou — exibindo dados em cache</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>IPCA — Variação Acum. 12m por Grupo</h3>
+          <div class="sub" id="cardSubGrupos">Comparação entre o mês mais recente e o mesmo mês do ano anterior</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item" id="legendGrupoAnterior"><i style="background:var(--muted-2)"></i>Acum. ano anterior</div>
+        <div class="legend-item" id="legendGrupoAtual"><i style="background:var(--blue)"></i>Acum. mês mais recente</div>
+      </div>
+      <div class="chart-wrap" style="height:420px;">
+        <div class="chart-status" id="gruposStatus">Carregando dados…</div>
+        <canvas id="gruposChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fonte:</b> Banco Central do Brasil — SGS (variação mensal por grupo do IPCA; acumulado em 12 meses calculado a partir do composto mensal).
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>IPCA — Índice de Difusão</h3>
+          <div class="sub">Percentual de subitens com alta de preço no mês</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="difusaoStatus">Carregando dados…</div>
+        <canvas id="difusaoChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fonte:</b> Banco Central do Brasil — SGS, série 21379. O índice de difusão mede a proporção de subitens do IPCA que tiveram variação de preço positiva no mês — quanto mais alto, mais generalizada a alta de preços entre os itens pesquisados.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Preços Livres, Comercializáveis, Não Comercializáveis e Monitorados</h3>
+          <div class="sub">Acumulado em 12 meses</div>
+        </div>
+      </div>
+      <div class="legend-row" id="legendLivres"></div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="livresStatus">Carregando dados…</div>
+        <canvas id="livresChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fonte:</b> Banco Central do Brasil — SGS (variação mensal por segmento; acumulado em 12 meses calculado a partir do composto mensal).
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Bens Duráveis, Semiduráveis, Não Duráveis, Serviços e Monitorados</h3>
+          <div class="sub">Acumulado em 12 meses</div>
+        </div>
+      </div>
+      <div class="legend-row" id="legendDuraveis"></div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="duraveisStatus">Carregando dados…</div>
+        <canvas id="duraveisChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fonte:</b> Banco Central do Brasil — SGS (variação mensal por segmento; acumulado em 12 meses calculado a partir do composto mensal).
       </div>
     </section>
   </div>
@@ -1379,6 +1492,279 @@ async function buildPolMonChart(){
 }
 
 buildPolMonChart();
+
+// ============================================================
+// Evolução de Taxa de Juros Real — Selic (fim de ano) x IPCA (acum. ano)
+// ============================================================
+
+async function getJurosRealData(){
+  const res = await fetch('./data/juros_real_data.json', { cache: 'no-store' });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+async function buildJurosRealChart(){
+  const status = document.getElementById('jurosRealStatus');
+  try {
+    const payload = await getJurosRealData();
+    const s = payload.series;
+    if(!s || !s.anos || !s.anos.length) throw new Error('sem dados');
+
+    if(payload.had_failure){
+      status.textContent = 'Última coleta automática falhou — exibindo dados em cache.';
+      status.style.display = 'flex';
+      status.style.color = '#F5A623';
+    } else {
+      status.style.display = 'none';
+    }
+
+    const ultimoFechado = s.ano_fechado[s.ano_fechado.length - 1];
+    if(!ultimoFechado){
+      document.getElementById('cardSubJurosReal').textContent =
+        `Selic (fim de ano) x IPCA (acumulado no ano) · ${s.anos[s.anos.length - 1]} é parcial (dado mais recente disponível)`;
+    }
+
+    const ctx = document.getElementById('jurosRealChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: s.anos,
+        datasets: [
+          {
+            label: 'Selic',
+            data: s.selic_pct,
+            borderColor: COLORS.blue,
+            backgroundColor: COLORS.blueSoft,
+            borderWidth: 2.4,
+            pointRadius: (c) => s.ano_fechado[c.dataIndex] ? 3 : 5,
+            pointStyle: (c) => s.ano_fechado[c.dataIndex] ? 'circle' : 'rectRot',
+            pointBackgroundColor: COLORS.blue,
+            fill: '+1',
+            tension: 0.15
+          },
+          {
+            label: 'IPCA acum. no ano',
+            data: s.ipca_pct,
+            borderColor: COLORS.purple,
+            backgroundColor: 'transparent',
+            borderWidth: 2.4,
+            pointRadius: (c) => s.ano_fechado[c.dataIndex] ? 3 : 5,
+            pointStyle: (c) => s.ano_fechado[c.dataIndex] ? 'circle' : 'rectRot',
+            pointBackgroundColor: COLORS.purple,
+            fill: false,
+            tension: 0.15
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            display: true, position: 'bottom',
+            labels: { color: COLORS.white, font: { size: 10.5, family: "'JetBrains Mono', monospace" }, boxWidth: 14 }
+          },
+          tooltip: {
+            backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+            titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+            callbacks: {
+              label: (c) => `${c.dataset.label}: ${c.raw.toFixed(2)}%`,
+              afterBody: (items) => {
+                const i = items[0].dataIndex;
+                const parcial = s.ano_fechado[i] ? '' : '  (parcial)';
+                return [`Juro real: ${s.juro_real_pct[i].toFixed(2)}%${parcial}`];
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } } },
+          y: {
+            grid: { color: COLORS.grid },
+            ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` }
+          }
+        }
+      }
+    });
+  } catch(err){
+    console.error(err);
+    status.textContent = 'Não foi possível carregar data/juros_real_data.json (' + err.message + ')';
+  }
+}
+
+buildJurosRealChart();
+
+// ============================================================
+// Inflação — IPCA Decomposição (tabela 7060/SIDRA)
+// ============================================================
+
+let INFL_DATA_PROMISE = null;
+
+async function getInflacaoData(){
+  if(!INFL_DATA_PROMISE){
+    INFL_DATA_PROMISE = fetch('./data/inflacao_data.json', { cache: 'no-store' })
+      .then(res => {
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+  }
+  return INFL_DATA_PROMISE;
+}
+
+const INFL_LINE_COLORS = [COLORS.blue, COLORS.purple, COLORS.green, '#F5A623', '#E8749B'];
+
+function fmtMesAnoInfl(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
+}
+
+function renderInflHeaderStatus(payload){
+  const dot = document.getElementById('liveDotInfl');
+  const badge = document.getElementById('staleBadgeInfl');
+  document.getElementById('lastUpdateInfl').textContent = 'Atualizado em ' + fmtDateTime(payload.updated_at);
+  if(payload.had_failure){
+    dot.classList.add('warn');
+    badge.style.display = 'inline-block';
+  }
+}
+
+function renderGruposChart(grafico){
+  const status = document.getElementById('gruposStatus');
+  if(!grafico || !grafico.datas || !grafico.datas.length){
+    status.textContent = 'Sem dados para o gráfico de grupos.';
+    status.style.display = 'flex';
+    return;
+  }
+  status.style.display = 'none';
+
+  const datas = grafico.datas;
+  const idxAtual = datas.length - 1;
+  const idxAnterior = idxAtual - 12;
+  const nomes = Object.keys(grafico.grupos);
+
+  const atual = nomes.map(n => grafico.grupos[n][idxAtual]);
+  const anterior = idxAnterior >= 0 ? nomes.map(n => grafico.grupos[n][idxAnterior]) : nomes.map(() => null);
+
+  document.getElementById('legendGrupoAnterior').innerHTML =
+    idxAnterior >= 0 ? `<i style="background:var(--muted-2)"></i>Acum. ${fmtMesAnoInfl(datas[idxAnterior])}` : '';
+  document.getElementById('legendGrupoAtual').innerHTML =
+    `<i style="background:var(--blue)"></i>Acum. ${fmtMesAnoInfl(datas[idxAtual])}`;
+  document.getElementById('cardSubGrupos').textContent =
+    idxAnterior >= 0
+      ? `${fmtMesAnoInfl(datas[idxAnterior])} vs. ${fmtMesAnoInfl(datas[idxAtual])}`
+      : `Acumulado em 12 meses até ${fmtMesAnoInfl(datas[idxAtual])}`;
+
+  const ctx = document.getElementById('gruposChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: nomes,
+      datasets: [
+        { label: `Acum. ${idxAnterior >= 0 ? fmtMesAnoInfl(datas[idxAnterior]) : 'ano anterior'}`, data: anterior, backgroundColor: COLORS.muted, borderRadius: 3 },
+        { label: `Acum. ${fmtMesAnoInfl(datas[idxAtual])}`, data: atual, backgroundColor: COLORS.blue, borderRadius: 3 }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+          titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+          callbacks: { label: (c) => `${c.dataset.label}: ${c.raw === null ? '—' : c.raw.toFixed(2) + '%'}` }
+        }
+      },
+      scales: {
+        x: { grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 }, callback: (v) => `${v}%` } },
+        y: { grid: { display: false }, ticks: { color: COLORS.white, font: { size: 11.5 } } }
+      }
+    }
+  });
+}
+
+function renderTimeSeriesChart(canvasId, statusId, grafico, seriesObj){
+  const status = document.getElementById(statusId);
+  if(!grafico || !grafico.datas || !grafico.datas.length){
+    status.textContent = 'Sem dados disponíveis.';
+    status.style.display = 'flex';
+    return;
+  }
+  status.style.display = 'none';
+
+  const nomes = Object.keys(seriesObj);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: grafico.datas,
+      datasets: nomes.map((nome, i) => ({
+        label: nome,
+        data: seriesObj[nome],
+        borderColor: INFL_LINE_COLORS[i % INFL_LINE_COLORS.length],
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        tension: 0.25,
+        spanGaps: true
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+          titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+          callbacks: { label: (c) => `${c.dataset.label}: ${c.raw === null ? '—' : c.raw.toFixed(2) + '%'}` }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time', time: { unit: 'year', displayFormats: { year: 'yyyy' }, tooltipFormat: 'MMM/yyyy' },
+          grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } }
+        },
+        y: {
+          grid: { color: COLORS.grid },
+          ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` }
+        }
+      }
+    }
+  });
+
+  const legendId = canvasId === 'livresChart' ? 'legendLivres' : 'legendDuraveis';
+  const legendEl = document.getElementById(legendId);
+  if(legendEl){
+    legendEl.innerHTML = nomes.map((nome, i) =>
+      `<div class="legend-item"><i style="background:${INFL_LINE_COLORS[i % INFL_LINE_COLORS.length]}"></i>${nome}</div>`
+    ).join('');
+  }
+}
+
+async function buildInflacaoPage(){
+  try {
+    const payload = await getInflacaoData();
+    renderInflHeaderStatus(payload);
+    const g = payload.graficos || {};
+    renderGruposChart(g.grupos);
+    renderTimeSeriesChart('difusaoChart', 'difusaoStatus', g.difusao, g.difusao ? { 'Índice de difusão': g.difusao.difusao_pct } : {});
+    renderTimeSeriesChart('livresChart', 'livresStatus', g.livres_monitorados, g.livres_monitorados ? g.livres_monitorados.series : {});
+    renderTimeSeriesChart('duraveisChart', 'duraveisStatus', g.duraveis_servicos, g.duraveis_servicos ? g.duraveis_servicos.series : {});
+  } catch(err){
+    console.error(err);
+    ['gruposStatus', 'difusaoStatus', 'livresStatus', 'duraveisStatus'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el){
+        el.textContent = 'Não foi possível carregar data/inflacao_data.json (' + err.message + ')';
+        el.style.display = 'flex';
+      }
+    });
+  }
+}
+
+buildInflacaoPage();
 
 // ============================================================
 // Avaliação MACRO CIEM — texto editorial em carrossel
