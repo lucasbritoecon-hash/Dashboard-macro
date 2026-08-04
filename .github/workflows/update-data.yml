@@ -37,11 +37,17 @@ jobs:
       - name: Buscar Receita e Despesa do Governo Geral (Tesouro)
         run: python scripts/fetch_receita_despesa.py
 
+      - name: Buscar Evolucao de Taxa de Juros Real (Selic x IPCA acum. ano)
+        run: python scripts/fetch_juros_real.py
+
+      - name: Buscar dados de Inflacao (IPCA - grupos, difusao, livres/monitorados, duraveis/servicos)
+        run: python scripts/fetch_inflacao_data.py
+
       - name: Commitar se houver mudancas
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/fiscal_data.json data/activity_data.json data/politica_monetaria_data.json data/receita_despesa_data.json
+          git add data/fiscal_data.json data/activity_data.json data/politica_monetaria_data.json data/receita_despesa_data.json data/juros_real_data.json data/inflacao_data.json
           if git diff --staged --quiet; then
             echo "Sem mudancas nos dados."
           else
