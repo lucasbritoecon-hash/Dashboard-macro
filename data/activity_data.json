@@ -218,7 +218,9 @@
       2.92
     ]
   },
-  "updated_at": "2026-08-03T14:36:43.896490+00:00",
-  "had_failure": false,
-  "failed_keys": []
+  "updated_at": "2026-08-04T14:11:02.978505+00:00",
+  "had_failure": true,
+  "failed_keys": [
+    "atividade"
+  ]
 }
