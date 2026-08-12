@@ -28,23 +28,23 @@ URL_FOCUS_MENSAL = (
 )
 
 
-def buscar_focus_mensal_ipca(base_calculo: int = 0) -> dict:
+def buscar_focus_mensal(indicador: str, base_calculo: int = 0) -> dict:
     """
-    Retorna {"YYYY-MM-01": mediana_decimal, ...} com a mediana MAIS RECENTE do
+    Versão genérica de buscar_focus_mensal_ipca (ver abaixo) para qualquer
+    indicador do Focus mensal, não só IPCA -- por exemplo "Taxa de
+    desocupação" (usado no painel de Mercado de Trabalho).
+
+    Retorna {"YYYY-MM-01": mediana_bruta, ...} com a mediana MAIS RECENTE do
     Focus mensal pra cada mês de referência disponível (histórico completo,
     não só os próximos N meses -- quem consome filtra o horizonte que quiser).
+    A mediana vem NA MESMA UNIDADE que a API devolve (para IPCA, por
+    exemplo, em % -- quem consome decide se converte pra fração).
 
     base_calculo:
       - 0 (padrão): expectativas informadas nos últimos 30 dias antes do
         cálculo da estatística (janela mais larga, mais estável).
       - 1: só expectativas dos últimos 4 dias úteis (mais sensível a notícia
         recente, mais próximo do que o mercado pensa "hoje").
-
-    OBSERVAÇÃO: o painel usa base_calculo=0 (padrão desta função), ou seja,
-    a linha "Focus" do gráfico reflete a mediana das expectativas de mercado
-    coletadas pelo BCB nos ÚLTIMOS 30 DIAS -- não é só a pesquisa do dia mais
-    recente. Se algum dia quisermos a leitura "mais quente" (últimos 4 dias
-    úteis), é só chamar com base_calculo=1.
     """
     # Esse endpoint (ExpectativaMercadoMensais) quebra com $filter usando
     # baseCalculo, com ou sem aspas -- sempre devolve 400 "Edm.Boolean e
@@ -54,7 +54,7 @@ def buscar_focus_mensal_ipca(base_calculo: int = 0) -> dict:
     # isso aqui so filtramos por Indicador no $filter e filtramos baseCalculo
     # no lado do cliente, depois de baixar os dados.
     params = {
-        "$filter": "Indicador eq 'IPCA'",
+        "$filter": f"Indicador eq '{indicador}'",
         "$orderby": "Data desc",
         "$top": 20000,
         "$format": "json",
@@ -100,8 +100,23 @@ def buscar_focus_mensal_ipca(base_calculo: int = 0) -> dict:
     for ref, (_data_pesquisa, mediana) in mais_recente.items():
         mes_str, ano_str = ref.split("/")
         data_str = datetime(int(ano_str), int(mes_str), 1).strftime("%Y-%m-01")
-        projecao[data_str] = mediana / 100
+        projecao[data_str] = mediana
     return projecao
+
+
+def buscar_focus_mensal_ipca(base_calculo: int = 0) -> dict:
+    """
+    Wrapper específico pro IPCA (mantido por compatibilidade com quem já
+    importava esta função) -- devolve a mediana já em FRAÇÃO (dividida por
+    100), como antes.
+
+    OBSERVAÇÃO: a linha "Focus" do gráfico reflete a mediana das expectativas
+    de mercado coletadas pelo BCB nos ÚLTIMOS 30 DIAS (base_calculo=0) -- não
+    é só a pesquisa do dia mais recente. Se algum dia quisermos a leitura
+    "mais quente" (últimos 4 dias úteis), é só chamar com base_calculo=1.
+    """
+    bruto = buscar_focus_mensal("IPCA", base_calculo=base_calculo)
+    return {data_str: mediana / 100 for data_str, mediana in bruto.items()}
 
 
 if __name__ == "__main__":
