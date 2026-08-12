@@ -5,3 +5,4 @@ numpy
 scipy
 xlrd
 openpyxl
+x13binary  # opcional: binario do X-13ARIMA-SEATS pronto pra uso (local e CI); sem isso, cai no fallback STL em desemprego_sa

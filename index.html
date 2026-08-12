@@ -117,6 +117,7 @@
   .legend-item i.line{ height:2px; border-radius:0; margin-top:0; }
   .legend-item i.dashed{ background: repeating-linear-gradient(90deg, var(--purple) 0 6px, transparent 6px 10px); height:2px; border-radius:0; width:16px; }
   .legend-item i.band{ background: var(--purple-soft); border:1px solid var(--white); }
+  .legend-item i.dots{ background: repeating-linear-gradient(90deg, var(--green) 0 3px, transparent 3px 6px); height:5px; border-radius:3px; width:16px; }
 
   .chart-wrap{ position:relative; height: 340px; margin-top: 14px; }
   .chart-status{
@@ -143,6 +144,15 @@
     background: rgba(245,166,35,0.12); border:1px solid rgba(245,166,35,0.3);
     padding:3px 9px; border-radius:6px; font-family:'JetBrains Mono', monospace;
   }
+
+  .kpi-row{ display:flex; gap:20px; flex-wrap:wrap; margin-top:6px; }
+  .kpi-box{
+    flex:1; min-width:220px; background: var(--bg-elev-2); border:1px solid var(--border);
+    border-radius:12px; padding:18px 22px;
+  }
+  .kpi-box .kpi-label{ font-size:12.5px; color: var(--muted); margin-bottom:10px; }
+  .kpi-box .kpi-value{ font-family:'Space Grotesk', sans-serif; font-size:36px; font-weight:600; color: var(--white); line-height:1; }
+  .kpi-box .kpi-sub{ font-size:11.5px; color: var(--muted); margin-top:8px; font-family:'JetBrains Mono', monospace; }
 
   footer{ text-align:center; color: var(--muted-2); font-size:12px; padding: 10px 0 30px; }
   footer a{ color: var(--blue); text-decoration:none; }
@@ -197,7 +207,7 @@
     <div class="tab" data-page="atividade">Atividade</div>
     <div class="tab" data-page="politica-monetaria">Política Monetária</div>
     <div class="tab" data-page="inflacao">Inflação</div>
-    <div class="tab soon">Mercado de Trabalho</div>
+    <div class="tab" data-page="mercado-trabalho">Mercado de Trabalho</div>
     <div class="tab soon">Expectativas</div>
   </nav>
 </header>
@@ -551,6 +561,118 @@
       </div>
       <div class="foot-note">
         <b>Fonte:</b> Banco Central do Brasil — SGS (variação mensal por segmento; acumulado em 12 meses calculado a partir do composto mensal).
+      </div>
+    </section>
+  </div>
+
+  <div class="page" id="page-mercado-trabalho" style="display:none">
+    <div class="page-head">
+      <div>
+        <h2>Mercado de Trabalho</h2>
+        <p>Taxa de desocupação, informalidade, desalento e estimativas de NAIRU (taxa de desemprego não aceleradora de inflação), com dados da PNAD Contínua (IBGE/SIDRA) e do Banco Central do Brasil.</p>
+      </div>
+      <div>
+        <div class="live">
+          <span class="dot" id="liveDotMT"></span>
+          <div>
+            <div class="live-title">Elaboração: CIEM</div>
+            <div class="live-sub" id="lastUpdateMT">Atualizado em —</div>
+          </div>
+        </div>
+        <div id="staleBadgeMT" style="display:none" class="stale-badge">última atualização automática falhou — exibindo dados em cache</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Taxa de Desocupação</h3>
+          <div class="sub">PNAD Contínua, trimestre móvel, Brasil</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><i class="line" style="background:var(--blue)"></i>Observada</div>
+        <div class="legend-item"><i class="dashed" style="background:repeating-linear-gradient(90deg, var(--purple) 0 6px, transparent 6px 10px)"></i>Dessazonalizada (X-13ARIMA-SEATS)</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="desempregoStatus">Carregando dados…</div>
+        <canvas id="desempregoChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fonte:</b> IBGE — SIDRA, tabela 6381 (PNAD Contínua, trimestre móvel). Linha dessazonalizada calculada com o filtro X-13ARIMA-SEATS (Census Bureau) sobre a mesma série.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Taxa de Informalidade</h3>
+          <div class="sub">Trabalhadores informais como % da população ocupada — PNAD Contínua, trimestre móvel</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="informalidadeStatus">Carregando dados…</div>
+        <canvas id="informalidadeChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fonte:</b> IBGE — SIDRA, tabela 8513 (PNAD Contínua, trimestre móvel).
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Pessoas Desalentadas</h3>
+          <div class="sub">Percentual da força de trabalho potencial — série histórica, PNAD Contínua, trimestre móvel</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="desalentadosStatus">Carregando dados…</div>
+        <canvas id="desalentadosChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Fonte:</b> IBGE — SIDRA, tabela 6807 (PNAD Contínua, trimestre móvel). A desocupação desalentada mede pessoas fora da força de trabalho que desistiram de procurar emprego.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>NAIRU — Filtro Hodrick-Prescott</h3>
+          <div class="sub">Taxa de desemprego observada (média trimestral) vs. tendência de longo prazo (HP, λ=1600)</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><i class="line" style="background:var(--blue)"></i>Desemprego observado</div>
+        <div class="legend-item"><i class="line" style="background:var(--purple)"></i>NAIRU (tendência HP)</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="nairuHpStatus">Carregando dados…</div>
+        <canvas id="nairuHpChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Metodologia:</b> a série de desocupação é agregada em médias trimestrais e filtrada com o filtro Hodrick-Prescott (λ=1600, equivalente a <code>mFilter::hpfilter(freq=4)</code>). A NAIRU é o componente de tendência do filtro.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>NAIRU — Filtro de Baxter-King</h3>
+          <div class="sub">Taxa de desemprego mensal vs. tendência de longo prazo (Baxter-King, ciclos de 18–96 meses)</div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><i class="line" style="background:var(--blue)"></i>Desemprego observado</div>
+        <div class="legend-item"><i class="dots"></i>Extensão (Focus / replicação) — ainda não ocorreu</div>
+        <div class="legend-item"><i class="line" style="background:var(--purple)"></i>NAIRU (Baxter-King)</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-status" id="nairuBkStatus">Carregando dados…</div>
+        <canvas id="nairuBkChart"></canvas>
+      </div>
+      <div class="foot-note">
+        <b>Metodologia:</b> a série mensal é estendida com a mediana do Boletim Focus para "Taxa de desocupação" e, após o horizonte do Focus, replicada a taxa constante por mais 36 meses — só para evitar que o filtro (que sempre descarta as 12 observações mais recentes) corte dados observados. Filtro de Baxter-King (ciclos de 18 a 96 meses, K=12, equivalente a <code>mFilter::bkfilter(pl=18, pu=96)</code>). A NAIRU é o desemprego observado menos o componente cíclico do filtro. Em verde/bolinhas: trecho da série que é projeção (Focus ou replicação), não dado observado.
       </div>
     </section>
   </div>
@@ -1765,6 +1887,304 @@ async function buildInflacaoPage(){
 }
 
 buildInflacaoPage();
+
+// ============================================================
+// Mercado de Trabalho — desemprego, informalidade, desalento e NAIRU
+// ============================================================
+
+let MT_DATA_PROMISE = null;
+
+async function getMercadoTrabalhoData(){
+  if(!MT_DATA_PROMISE){
+    MT_DATA_PROMISE = fetch('./data/mercado_trabalho_data.json', { cache: 'no-store' })
+      .then(res => {
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+  }
+  return MT_DATA_PROMISE;
+}
+
+function renderMTHeaderStatus(payload){
+  const dot = document.getElementById('liveDotMT');
+  const badge = document.getElementById('staleBadgeMT');
+  document.getElementById('lastUpdateMT').textContent = 'Atualizado em ' + fmtDateTime(payload.updated_at);
+  if(payload.had_failure){
+    dot.classList.add('warn');
+    badge.style.display = 'inline-block';
+  }
+}
+
+function renderMTSingleLineChart(canvasId, statusId, grafico, label){
+  const status = document.getElementById(statusId);
+  if(!grafico || !grafico.datas || !grafico.datas.length){
+    status.textContent = 'Sem dados disponíveis.';
+    status.style.display = 'flex';
+    return;
+  }
+  status.style.display = 'none';
+
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: grafico.datas,
+      datasets: [{
+        label: label,
+        data: grafico.valores,
+        borderColor: COLORS.blue,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        tension: 0.25,
+        spanGaps: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+          titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+          callbacks: { label: (c) => `${c.dataset.label}: ${c.raw === null ? '—' : c.raw.toFixed(2) + '%'}` }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time', time: { unit: 'year', displayFormats: { year: 'yyyy' }, tooltipFormat: 'MMM/yyyy' },
+          grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } }
+        },
+        y: {
+          grid: { color: COLORS.grid },
+          ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` }
+        }
+      }
+    }
+  });
+}
+
+// Desemprego observado (SIDRA) + linha dessazonalizada (X-13ARIMA-SEATS).
+// As duas series tem datas ligeiramente diferentes (o X-13 pode descartar
+// pontas), entao cada uma usa seu proprio eixo de "labels" via parsing
+// {x,y} em vez de compartilhar um unico array `labels`.
+function renderDesempregoChart(canvasId, statusId, desemprego, desempregoSa){
+  const status = document.getElementById(statusId);
+  if(!desemprego || !desemprego.datas || !desemprego.datas.length){
+    status.textContent = 'Sem dados disponíveis.';
+    status.style.display = 'flex';
+    return;
+  }
+  status.style.display = 'none';
+
+  const toXY = (grafico) => grafico.datas.map((d, i) => ({ x: d, y: grafico.valores[i] }));
+
+  const datasets = [{
+    label: 'Taxa de desocupação (observada)',
+    data: toXY(desemprego),
+    borderColor: COLORS.blue,
+    backgroundColor: 'transparent',
+    borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.25, spanGaps: true
+  }];
+
+  if(desempregoSa && desempregoSa.datas && desempregoSa.datas.length){
+    datasets.push({
+      label: 'Dessazonalizada (X-13ARIMA-SEATS)',
+      data: toXY(desempregoSa),
+      borderColor: COLORS.purple,
+      backgroundColor: 'transparent',
+      borderWidth: 2, borderDash: [5, 3], pointRadius: 0, pointHoverRadius: 4, tension: 0.25, spanGaps: true
+    });
+  }
+
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+          titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+          callbacks: { label: (c) => `${c.dataset.label}: ${c.raw === null || c.raw.y === null ? '—' : c.raw.y.toFixed(2) + '%'}` }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time', time: { unit: 'year', displayFormats: { year: 'yyyy' }, tooltipFormat: 'MMM/yyyy' },
+          grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } }
+        },
+        y: {
+          grid: { color: COLORS.grid },
+          ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` }
+        }
+      }
+    }
+  });
+}
+
+// NAIRU (HP ou Baxter-King). Quando nairuData.data_corte vem preenchido
+// (so acontece na BK, que estende a serie com Focus/replicacao), o
+// "Desemprego observado" e quebrado em 2 datasets: o trecho real (linha
+// solida azul) e o trecho projetado (verde, em bolinhas, sem preencher os
+// pontos reais com null pra nao cortar a linha antes da hora).
+function renderNairuChart(canvasId, statusId, nairuData){
+  const status = document.getElementById(statusId);
+  if(!nairuData || !nairuData.datas || !nairuData.datas.length){
+    status.textContent = 'Sem dados disponíveis.';
+    status.style.display = 'flex';
+    return;
+  }
+  status.style.display = 'none';
+
+  const datasets = [];
+
+  if(nairuData.data_corte){
+    const corte = nairuData.data_corte;
+    datasets.push({
+      label: 'Desemprego observado',
+      data: nairuData.datas.map((d, i) => d <= corte ? nairuData.desemprego[i] : null),
+      borderColor: COLORS.blue,
+      backgroundColor: 'transparent',
+      borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.25, spanGaps: false
+    });
+    datasets.push({
+      // Mesmo estilo do dataset "Focus mensal" do gráfico de política
+      // monetária (IPCA): linha fina tracejada em verde, sem bolinhas —
+      // condizente com o marcador ".dots" usado na legenda logo abaixo.
+      label: 'Extensão (Focus / replicação)',
+      data: nairuData.datas.map((d, i) => d >= corte ? nairuData.desemprego[i] : null),
+      borderColor: COLORS.green,
+      backgroundColor: 'transparent',
+      borderDash: [1, 2],
+      borderWidth: 2,
+      pointRadius: 0, pointHoverRadius: 4,
+      tension: 0.25, spanGaps: false
+    });
+  } else {
+    datasets.push({
+      label: 'Desemprego observado',
+      data: nairuData.desemprego,
+      borderColor: COLORS.blue,
+      backgroundColor: 'transparent',
+      borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.25, spanGaps: true
+    });
+  }
+
+  datasets.push({
+    label: 'NAIRU',
+    data: nairuData.nairu,
+    borderColor: COLORS.purple,
+    backgroundColor: 'transparent',
+    borderWidth: 2, borderDash: [5, 3], pointRadius: 0, pointHoverRadius: 4, tension: 0.25, spanGaps: true
+  });
+
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: { labels: nairuData.datas, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+          titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+          filter: (item) => item.raw !== null && item.raw !== undefined,
+          callbacks: { label: (c) => `${c.dataset.label}: ${c.raw === null ? '—' : c.raw.toFixed(2) + '%'}` }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time', time: { unit: 'year', displayFormats: { year: 'yyyy' }, tooltipFormat: 'MMM/yyyy' },
+          grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } }
+        },
+        y: {
+          grid: { color: COLORS.grid },
+          ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` }
+        }
+      }
+    }
+  });
+}
+
+function renderDesalentadosChart(canvasId, statusId, grafico){
+  const status = document.getElementById(statusId);
+  if(!grafico || !grafico.datas || !grafico.datas.length){
+    status.textContent = 'Sem dados disponíveis.';
+    status.style.display = 'flex';
+    return;
+  }
+  status.style.display = 'none';
+
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: grafico.datas,
+      datasets: [{
+        label: '% de Pessoas Desalentadas',
+        data: grafico.valores,
+        backgroundColor: COLORS.purple,
+        borderRadius: 2,
+        maxBarThickness: 18
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E1834', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+          titleColor: COLORS.white, bodyColor: COLORS.white, padding: 10,
+          callbacks: { label: (c) => `${c.dataset.label}: ${c.raw === null ? '—' : c.raw.toFixed(2) + '%'}` }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time', time: { unit: 'year', displayFormats: { year: 'yyyy' }, tooltipFormat: 'MMM/yyyy' },
+          grid: { color: COLORS.grid }, ticks: { color: COLORS.white, font: { size: 11 } }
+        },
+        y: {
+          grid: { color: COLORS.grid },
+          ticks: { color: COLORS.white, font: { family: "'JetBrains Mono', monospace", size: 10.5 }, callback: (v) => `${v}%` }
+        }
+      }
+    }
+  });
+}
+
+async function buildMercadoTrabalhoPage(){
+  const statusIds = ['desempregoStatus', 'informalidadeStatus', 'desalentadosStatus', 'nairuHpStatus', 'nairuBkStatus'];
+  try {
+    const payload = await getMercadoTrabalhoData();
+    renderMTHeaderStatus(payload);
+    const d = payload.dados || {};
+    renderDesempregoChart('desempregoChart', 'desempregoStatus', d.desemprego, d.desemprego_sa);
+    renderMTSingleLineChart('informalidadeChart', 'informalidadeStatus', d.informalidade, 'Taxa de informalidade');
+    renderDesalentadosChart('desalentadosChart', 'desalentadosStatus', d.desalentados);
+    renderNairuChart('nairuHpChart', 'nairuHpStatus', d.nairu_hp);
+    renderNairuChart('nairuBkChart', 'nairuBkStatus', d.nairu_bk);
+  } catch(err){
+    console.error(err);
+    statusIds.forEach(id => {
+      const el = document.getElementById(id);
+      if(el){
+        el.textContent = 'Não foi possível carregar data/mercado_trabalho_data.json (' + err.message + ')';
+        el.style.display = 'flex';
+      }
+    });
+  }
+}
+
+buildMercadoTrabalhoPage();
 
 // ============================================================
 // Avaliação MACRO CIEM — texto editorial em carrossel
