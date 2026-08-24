@@ -2853,7 +2853,9 @@
   },
   "source_url": "https://thot-arquivos.tesouro.gov.br/publicacao/40185",
   "source_page": "https://www.tesourotransparente.gov.br/publicacoes/estatisticas-fiscais-do-governo-geral/2021/22",
-  "updated_at": "2026-08-23T12:38:23.127413+00:00",
-  "had_failure": false,
-  "failed_keys": []
+  "updated_at": "2026-08-24T12:52:25.916376+00:00",
+  "had_failure": true,
+  "failed_keys": [
+    "receita_despesa"
+  ]
 }
