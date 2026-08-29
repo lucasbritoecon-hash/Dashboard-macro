@@ -3303,7 +3303,10 @@
       }
     }
   },
-  "updated_at": "2026-08-28T21:46:39.910836+00:00",
-  "had_failure": false,
-  "failed_keys": []
+  "updated_at": "2026-08-29T16:19:08.592352+00:00",
+  "had_failure": true,
+  "failed_keys": [
+    "livres_monitorados",
+    "duraveis_servicos"
+  ]
 }
