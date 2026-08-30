@@ -11165,10 +11165,7 @@
       }
     ]
   },
-  "updated_at": "2026-08-29T16:15:48.032722+00:00",
-  "had_failure": true,
-  "failed_keys": [
-    "divida_bruta_brl",
-    "divida_liquida_estatais_pct"
-  ]
+  "updated_at": "2026-08-30T16:06:17.797774+00:00",
+  "had_failure": false,
+  "failed_keys": []
 }
