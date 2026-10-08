@@ -3326,7 +3326,9 @@
       }
     }
   },
-  "updated_at": "2026-10-07T18:33:02.609687+00:00",
-  "had_failure": false,
-  "failed_keys": []
+  "updated_at": "2026-10-08T18:32:30.498985+00:00",
+  "had_failure": true,
+  "failed_keys": [
+    "grupos"
+  ]
 }
