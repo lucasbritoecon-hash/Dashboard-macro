@@ -3349,9 +3349,7 @@
       }
     }
   },
-  "updated_at": "2026-10-27T17:42:03.008442+00:00",
-  "had_failure": true,
-  "failed_keys": [
-    "livres_monitorados"
-  ]
+  "updated_at": "2026-10-28T14:55:16.011459+00:00",
+  "had_failure": false,
+  "failed_keys": []
 }
