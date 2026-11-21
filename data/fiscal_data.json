@@ -11285,9 +11285,7 @@
       }
     ]
   },
-  "updated_at": "2026-11-20T19:39:02.952492+00:00",
-  "had_failure": true,
-  "failed_keys": [
-    "nominal_pct"
-  ]
+  "updated_at": "2026-11-21T18:43:56.246534+00:00",
+  "had_failure": false,
+  "failed_keys": []
 }
